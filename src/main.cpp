@@ -4,48 +4,35 @@
 #include <opencv2/dnn.hpp>
 #include <iostream>
 
+#include "cl_inference.hpp"
+
+#include "timer.hpp"
+
 // YOLOv5 默认输入尺寸为 640
 static const int INPUT_WIDTH = 640;
 static const int INPUT_HEIGHT = 640;
 
+YoloInferencd model;
 
 void gpu_accel_check();
 
 int main(int argc, char** argv) {
     gpu_accel_check();
 
-    //加载模型
-    cv::dnn::Net net = cv::dnn::readNetFromONNX("../models/yolov5n.onnx");
-    //设置opencv后端&cpu推理
-    net.setPreferableBackend(cv::dnn::DNN_BACKEND_OPENCV);
-    net.setPreferableTarget(cv::dnn::DNN_TARGET_CPU);
+    //启用opencl
+    cv::ocl::setUseOpenCL(true);
 
-    //先使用全黑图像
-    cv::Mat inputImage = cv::Mat::zeros(INPUT_HEIGHT, INPUT_WIDTH, CV_8UC3);
 
-    //前处理参数
-    cv::Mat blob = cv::dnn::blobFromImage(
-        inputImage,               // 输入图像
-        1.0,                      // 缩放因子 (scale factor)，根据需要修改
-        cv::Size(640, 640),       // 模型所需的输入尺寸
-        cv::Scalar(0,0,0),        // 减均值 (mean)，需要的话自行填入
-        true,                     // 是否进行RGB通道顺序的交换
-        false                     // 是否裁剪
-    );
-    net.setInput(blob);
+    //加载
+    model.load("../models/yolov5n.onnx");
+    
+    cv::Mat inputImage; // = cv::Mat::zeros(INPUT_HEIGHT, INPUT_WIDTH, CV_8UC3);
+    inputImage = cv::imread("/home/gkd/Opencl_vision/yolo_opencl/videos/IMG_20250109_003728.jpg");
 
-    //向前推理
-    std::vector<cv::String> outNames = net.getUnconnectedOutLayersNames();
-    std::vector<cv::Mat> outs;
-    net.forward(outs, outNames);
-    // cv::Mat out2 = net.forward();
+    //推理
+    model.forward(inputImage);
 
-    //查看输出向量
-    std::cout << outs.size() << std::endl;
-    std::cout << outs[0].size << std::endl;
-    for(int i = 0; i<84; i++){
-        std::cout << outs[0].at<float>(0,i, 5) << std::endl;
-    }
+
     return 0;
 }
 
