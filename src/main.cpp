@@ -29,7 +29,7 @@ int main(int argc, char** argv) {
     cv::ocl::setUseOpenCL(true);
 
     cv::Mat inputImage; // = cv::Mat::zeros(INPUT_HEIGHT, INPUT_WIDTH, CV_8UC3);
-    inputImage = cv::imread("/home/gkd/Opencl_vision/yolo_opencl/videos/IMAGE_2_BLUE.jpg");
+    inputImage = cv::imread("/home/gkd/Opencl_vision/yolo_opencl/videos/30128.jpg");
 
     /*Openvino test*/
     model.load("/home/gkd/Opencl_vision/yolo_opencl/models/yolov5-rm/distilbert.xml",

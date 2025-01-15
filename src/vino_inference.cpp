@@ -54,28 +54,24 @@ cv::Mat YoloInferencd_vino::letterboxImage(const cv::Mat& src, int output_width,
 //todo: GPU化
 ov::Tensor YoloInferencd_vino::pre_process(cv::Mat inputImage)
 {
-    //resize
+    
+    //debug（查看resize图像）
     cv::resize(inputImage, resized_image, cv::Size(INPUT_WIDTH, INPUT_HEIGHT));
     // resized_image = letterboxImage(inputImage, INPUT_WIDTH, INPUT_HEIGHT);
     cv::imwrite("/home/gkd/Opencl_vision/yolo_opencl/videos/debug_resized_image.jpg", resized_image);
 
-    //BGR -> RGB
-    cv::cvtColor(resized_image, resized_image, cv::COLOR_BGR2RGB);
-    //归一化
-    resized_image.convertTo(resized_image, CV_32F, 1.0f / 255.0f);
-    //HWC -> CHW
-    std::vector<float> input_data(net_width * net_height * channels);
-    // 遍历，将 HWC 数据拷贝到 CHW buffer
-    int index = 0;
-    for (int c = 0; c < channels; ++c) {
-        for (int h = 0; h < net_height; ++h) {
-            for (int w = 0; w < net_width; ++w) {
-                input_data[index++] = resized_image.at<cv::Vec3f>(h, w)[c];
-            }
-        }
-    }
+    //cv::blob proprocess (优化更好)
+    cv::Mat blob = cv::dnn::blobFromImage(
+                inputImage, 
+                1.0/255.0, 
+                cv::Size(INPUT_WIDTH, INPUT_HEIGHT), 
+                cv::Scalar(), 
+                true, 
+                false, 
+                CV_32F);
+
     //最后获得的输入张量
-    ov::Tensor input_tensor = ov::Tensor(input_type, {batch, channels, net_height, net_width}, input_data.data());
+    ov::Tensor input_tensor = ov::Tensor(input_type, {1, channels, INPUT_HEIGHT, INPUT_WIDTH}, blob.data);
     return input_tensor;
 }
 
