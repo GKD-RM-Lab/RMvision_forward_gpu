@@ -7,7 +7,7 @@
 #include <opencv2/dnn.hpp>
 #include <iostream>
 
-class YoloInferencd
+class YoloInferencd_cl
 {
 private:
     static const int INPUT_WIDTH = 640;
@@ -19,8 +19,8 @@ public:
     void forward(cv::Mat inputImage);    //推理（输入图片）
 
 
-    YoloInferencd();
-    ~YoloInferencd();
+    YoloInferencd_cl();
+    ~YoloInferencd_cl();
 };
 
 #endif

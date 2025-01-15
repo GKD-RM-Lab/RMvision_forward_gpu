@@ -2,15 +2,15 @@
 
 #include "timer.hpp"
 
-YoloInferencd::YoloInferencd(/* args */)
+YoloInferencd_cl::YoloInferencd_cl(/* args */)
 {
 }
 
-YoloInferencd::~YoloInferencd()
+YoloInferencd_cl::~YoloInferencd_cl()
 {
 }
 
-void YoloInferencd::load(cv::String model_path)
+void YoloInferencd_cl::load(cv::String model_path)
 {
     //加载模型
     net = cv::dnn::readNetFromONNX(model_path);
@@ -19,7 +19,7 @@ void YoloInferencd::load(cv::String model_path)
     net.setPreferableTarget(cv::dnn::DNN_TARGET_OPENCL);
 }
 
-void YoloInferencd::forward(cv::Mat inputImage)
+void YoloInferencd_cl::forward(cv::Mat inputImage)
 {
     //前处理参数
     cv::Mat blob = cv::dnn::blobFromImage(
