@@ -22,12 +22,12 @@ void YoloInferencd_vino::load(cv::String model_path, cv::String bin_path)
     net_width  = input_shape[3];
 
     //debug
-    std::cout << input_port << '\n' << input_type << "\n" << input_shape << std::endl;
+    // std::cout << input_port << '\n' << input_type << "\n" << input_shape << std::endl;
 }
 
 /*图像前处理*/
 //todo: GPU化
-ov::Tensor YoloInferencd_vino::post_process(cv::Mat inputImage)
+ov::Tensor YoloInferencd_vino::pre_process(cv::Mat inputImage)
 {
     cv::Mat resized_image;
     //resize
@@ -62,13 +62,69 @@ void YoloInferencd_vino::forward(ov::Tensor input)
     ov::Output<const ov::Node> output_port = compiled_model.output();
     ov::Tensor output_tensor = infer_request.get_output_tensor(0);
 
-    //查看输出
-    float* output_data = output_tensor.data<float>();
-    size_t num_boxes = output_tensor.get_shape()[1];
-    size_t stride    = output_tensor.get_shape()[2];
-    std::cout << output_tensor.get_shape() << std::endl;
+    //解析输出
+    output_data = output_tensor.data<float>();
+    num_boxes = output_tensor.get_shape()[1];
+    stride    = output_tensor.get_shape()[2];
+    
+    //debug - 查看输出
+    // std::cout << "----------" << std::endl;
+    // std::cout << "mun_box:" << num_boxes << std::endl;
+    // std::cout << "stride:" << stride << std::endl;
+    // std::cout << "shape:" << output_tensor.get_shape() << std::endl;
+    // for(int j=0; j<20; j++){
+    //     for(int i=0; i<stride; i++){
+    //         std::cout << output_data[j*stride + i] << ",";
+    //     }
+    //     std::cout << std::endl;
+    // }
 
+}
 
+std::vector<yolo_detec_box> YoloInferencd_vino::post_process()
+{
+    std::vector<yolo_detec_box> results;
+    yolo_detec_box result;
+ 
+    for(int j=0; j<num_boxes; j++){
+        //安装执行度筛选判定框
+        if(output_data[j*stride + 4] < yolo_cong_threshold)
+            continue;
+
+        //debug 输出通过筛选的判定框
+        for(int i=0; i<stride; i++){
+            std::cout << output_data[j*stride + i] << ",";
+        }
+        std::cout << "index = " << j << std::endl;
+
+        //解析判定框数据
+        result.x1 = output_data[j*stride + 0];
+        result.y1 = output_data[j*stride + 1];
+        result.x2 = output_data[j*stride + 2];
+        result.y2 = output_data[j*stride + 3];
+        //选择分类结果
+        float max_conf_class = -std::numeric_limits<float>::infinity();
+        int max_conf_class_id = -1;
+        for(int i=5; i<stride; i++){
+            if(output_data[j*stride + i] > max_conf_class){
+                max_conf_class = output_data[j*stride + i];
+                max_conf_class_id = i - 5; 
+            }
+        }
+        result.class_result = max_conf_class_id;
+        result.conf = max_conf_class;
+
+        results.push_back(result);
+
+        //debug 判定框结构体内容
+        // std::cout << "results_num=" << results.size() << std::endl;
+        // std::cout << "(" << results[0].x1 << "," << results[0].y1 << ") ->";
+        // std::cout << "(" << results[0].x2 << "," << results[0].y2 << "),";
+        // std::cout << "class_id=" << results[0].class_result << ", conf=" << results[0].conf << std::endl;
+
+    }
+
+    return results;
 }
 
 YoloInferencd_vino::YoloInferencd_vino()

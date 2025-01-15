@@ -29,13 +29,23 @@ int main(int argc, char** argv) {
     cv::ocl::setUseOpenCL(true);
 
     cv::Mat inputImage; // = cv::Mat::zeros(INPUT_HEIGHT, INPUT_WIDTH, CV_8UC3);
-    inputImage = cv::imread("/home/gkd/Opencl_vision/yolo_opencl/videos/IMG_20250109_003728.jpg");
+    inputImage = cv::imread("/home/gkd/Opencl_vision/yolo_opencl/videos/IMG_20250115_204851.jpg");
 
     /*Openvino test*/
     model.load("/home/gkd/Opencl_vision/yolo_opencl/models/yolov5-rm/distilbert.xml",
                 "/home/gkd/Opencl_vision/yolo_opencl/models/yolov5-rm/distilbert.bin");
 
-    model.forward(model.post_process(inputImage));
+    model.forward(model.pre_process(inputImage));
+
+    std::vector<yolo_detec_box> results;
+
+    results = model.post_process();
+
+    //debug 输出推理结果
+    std::cout << "results_num=" << results.size() << std::endl;
+    std::cout << "(" << results[0].x1 << "," << results[0].y1 << ") ->";
+    std::cout << "(" << results[0].x2 << "," << results[0].y2 << "),";
+    std::cout << "class_id=" << results[0].class_result << ", conf=" << results[0].conf << std::endl;
 
 
 

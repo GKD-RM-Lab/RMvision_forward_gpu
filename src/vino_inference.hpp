@@ -9,6 +9,19 @@
 
 #include <openvino/openvino.hpp>
 
+
+typedef struct
+{
+    float   x1;
+    float   y1;
+    float   x2;
+    float   y2;
+    float   conf;              //置信度
+    int class_result;      //分类结果
+}yolo_detec_box;
+
+
+
 class YoloInferencd_vino
 {
 private:
@@ -32,10 +45,17 @@ private:
 
     ov::Tensor input_tensor;    //输入张量
 
+    /*模型输出数据列表*/
+    float* output_data;
+    size_t num_boxes;
+    size_t stride;
+    float yolo_cong_threshold = 0.08;   //置信度阈值
+
 public:
     void load(cv::String model_path, cv::String bin_path);
-    ov::Tensor post_process(cv::Mat inputImage);          //前处理
+    ov::Tensor pre_process(cv::Mat inputImage);          //前处理
     void forward(ov::Tensor input);   
+    std::vector<yolo_detec_box> post_process();
     YoloInferencd_vino();
     ~YoloInferencd_vino();
 };
