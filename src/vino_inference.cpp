@@ -25,13 +25,40 @@ void YoloInferencd_vino::load(cv::String model_path, cv::String bin_path)
     // std::cout << input_port << '\n' << input_type << "\n" << input_shape << std::endl;
 }
 
+
+/*letterbox resize*/
+cv::Mat YoloInferencd_vino::letterboxImage(const cv::Mat& src, int output_width, int output_height) {
+    cv::Mat resized_img, padded_img;
+    int width = src.cols, height = src.rows;
+    float scale = std::min((float)output_width / width, (float)output_height / height);
+    int new_width = (int)(width * scale);
+    int new_height = (int)(height * scale);
+    
+    // Resize the image preserving aspect ratio
+    cv::resize(src, resized_img, cv::Size(new_width, new_height), 0, 0, cv::INTER_LINEAR);
+    
+    // Calculate top, bottom, left and right border sizes
+    int top = (output_height - new_height) / 2;
+    int bottom = output_height - new_height - top;
+    int left = (output_width - new_width) / 2;
+    int right = output_width - new_width - left;
+    
+    // Make border (this effectively adds padding around the resized image)
+    cv::copyMakeBorder(resized_img, padded_img, top, bottom, left, right, cv::BORDER_CONSTANT, cv::Scalar(255, 255, 255));
+
+    return padded_img;
+}
+
+
 /*图像前处理*/
 //todo: GPU化
 ov::Tensor YoloInferencd_vino::pre_process(cv::Mat inputImage)
 {
-    cv::Mat resized_image;
     //resize
     cv::resize(inputImage, resized_image, cv::Size(INPUT_WIDTH, INPUT_HEIGHT));
+    // resized_image = letterboxImage(inputImage, INPUT_WIDTH, INPUT_HEIGHT);
+    cv::imwrite("/home/gkd/Opencl_vision/yolo_opencl/videos/debug_resized_image.jpg", resized_image);
+
     //BGR -> RGB
     cv::cvtColor(resized_image, resized_image, cv::COLOR_BGR2RGB);
     //归一化
@@ -98,10 +125,10 @@ std::vector<yolo_detec_box> YoloInferencd_vino::post_process()
         std::cout << "index = " << j << std::endl;
 
         //解析判定框数据
-        result.x1 = output_data[j*stride + 0];
-        result.y1 = output_data[j*stride + 1];
-        result.x2 = output_data[j*stride + 2];
-        result.y2 = output_data[j*stride + 3];
+        result.x = output_data[j*stride + 0];
+        result.y = output_data[j*stride + 1];
+        result.w = output_data[j*stride + 2];
+        result.h = output_data[j*stride + 3];
         //选择分类结果
         float max_conf_class = -std::numeric_limits<float>::infinity();
         int max_conf_class_id = -1;
@@ -126,6 +153,23 @@ std::vector<yolo_detec_box> YoloInferencd_vino::post_process()
 
     return results;
 }
+
+
+cv::Mat YoloInferencd_vino::visulize(std::vector<yolo_detec_box> detecbox, cv::Mat image)
+{
+    if(detecbox.size() == 0){
+        return image;
+    }
+
+    for(int i=0; i<detecbox.size(); i++)
+    {
+        cv::rectangle(image, cv::Point(detecbox[i].x - detecbox[i].w*0.5, detecbox[i].y - detecbox[i].h*0.5),
+        cv::Point(detecbox[i].x + detecbox[i].w*0.5, detecbox[i].y + detecbox[i].h*0.5), cv::Scalar(0, 0, 255), 2);
+    }
+
+    return image;
+}
+
 
 YoloInferencd_vino::YoloInferencd_vino()
 {

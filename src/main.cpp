@@ -29,7 +29,7 @@ int main(int argc, char** argv) {
     cv::ocl::setUseOpenCL(true);
 
     cv::Mat inputImage; // = cv::Mat::zeros(INPUT_HEIGHT, INPUT_WIDTH, CV_8UC3);
-    inputImage = cv::imread("/home/gkd/Opencl_vision/yolo_opencl/videos/IMG_20250115_204851.jpg");
+    inputImage = cv::imread("/home/gkd/Opencl_vision/yolo_opencl/videos/IMAGE_2_BLUE.jpg");
 
     /*Openvino test*/
     model.load("/home/gkd/Opencl_vision/yolo_opencl/models/yolov5-rm/distilbert.xml",
@@ -43,11 +43,15 @@ int main(int argc, char** argv) {
 
     //debug 输出推理结果
     std::cout << "results_num=" << results.size() << std::endl;
-    std::cout << "(" << results[0].x1 << "," << results[0].y1 << ") ->";
-    std::cout << "(" << results[0].x2 << "," << results[0].y2 << "),";
+    std::cout << "(" << results[0].x << "," << results[0].y << ") ->";
+    std::cout << "(" << results[0].h << "," << results[0].w << "),";
     std::cout << "class_id=" << results[0].class_result << ", conf=" << results[0].conf << std::endl;
 
-
+    //debug 可视化
+    cv::Mat image_labeled;
+    cv::Mat resized_image = cv::imread("/home/gkd/Opencl_vision/yolo_opencl/videos/debug_resized_image.jpg");
+    image_labeled = model.visulize(results, resized_image);
+    cv::imwrite("/home/gkd/Opencl_vision/yolo_opencl/videos/debug_labled_image.jpg", image_labeled);
 
     /*Opencv DNN*/
     //加载

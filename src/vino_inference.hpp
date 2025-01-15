@@ -12,10 +12,10 @@
 
 typedef struct
 {
-    float   x1;
-    float   y1;
-    float   x2;
-    float   y2;
+    float   x;
+    float   y;
+    float   w;
+    float   h;
     float   conf;              //置信度
     int class_result;      //分类结果
 }yolo_detec_box;
@@ -56,8 +56,13 @@ public:
     ov::Tensor pre_process(cv::Mat inputImage);          //前处理
     void forward(ov::Tensor input);   
     std::vector<yolo_detec_box> post_process();
+    cv::Mat visulize(std::vector<yolo_detec_box> detecbox, cv::Mat image);
+    cv::Mat letterboxImage(const cv::Mat& src, int output_width, int output_height);
     YoloInferencd_vino();
     ~YoloInferencd_vino();
+
+    cv::Mat resized_image;  //debug - 上一次被resize的图像
+
 };
 
 
