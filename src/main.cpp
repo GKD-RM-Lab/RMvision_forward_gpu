@@ -7,6 +7,8 @@
 #include "cl_inference.hpp"
 #include "vino_inference.hpp"
 
+#include "yolov7_kpt.h"
+
 #include "timer.hpp"
 
 //openvino
@@ -29,29 +31,38 @@ int main(int argc, char** argv) {
     cv::ocl::setUseOpenCL(true);
 
     cv::Mat inputImage; // = cv::Mat::zeros(INPUT_HEIGHT, INPUT_WIDTH, CV_8UC3);
-    inputImage = cv::imread("/home/gkd/Opencl_vision/yolo_opencl/videos/30128.jpg");
+    inputImage = cv::imread("/home/gkd/Opencl_vision/yolo_opencl/videos/IMG_20250115_204851.jpg");
+
+
+    /*犀浦模型*/
+    yolo_kpt model;
+    std::vector<yolo_kpt::Object> result;
+
+    result = model.work(inputImage);
+
+    
 
     /*Openvino test*/
-    model.load("/home/gkd/Opencl_vision/yolo_opencl/models/yolov5-rm/distilbert.xml",
-                "/home/gkd/Opencl_vision/yolo_opencl/models/yolov5-rm/distilbert.bin");
+    // model.load("/home/gkd/Opencl_vision/yolo_opencl/models/yolov5-rm/distilbert.xml",
+    //             "/home/gkd/Opencl_vision/yolo_opencl/models/yolov5-rm/distilbert.bin");
 
-    model.forward(model.pre_process(inputImage));
+    // model.forward(model.pre_process(inputImage));
 
-    std::vector<yolo_detec_box> results;
+    // std::vector<yolo_detec_box> results;
 
-    results = model.post_process();
+    // results = model.post_process();
 
-    //debug 输出推理结果
-    std::cout << "results_num=" << results.size() << std::endl;
-    std::cout << "(" << results[0].x << "," << results[0].y << ") ->";
-    std::cout << "(" << results[0].h << "," << results[0].w << "),";
-    std::cout << "class_id=" << results[0].class_result << ", conf=" << results[0].conf << std::endl;
+    // //debug 输出推理结果
+    // std::cout << "results_num=" << results.size() << std::endl;
+    // std::cout << "(" << results[0].x << "," << results[0].y << ") ->";
+    // std::cout << "(" << results[0].h << "," << results[0].w << "),";
+    // std::cout << "class_id=" << results[0].class_result << ", conf=" << results[0].conf << std::endl;
 
-    //debug 可视化
-    cv::Mat image_labeled;
-    cv::Mat resized_image = cv::imread("/home/gkd/Opencl_vision/yolo_opencl/videos/debug_resized_image.jpg");
-    image_labeled = model.visulize(results, resized_image);
-    cv::imwrite("/home/gkd/Opencl_vision/yolo_opencl/videos/debug_labled_image.jpg", image_labeled);
+    // //debug 可视化
+    // cv::Mat image_labeled;
+    // cv::Mat resized_image = cv::imread("/home/gkd/Opencl_vision/yolo_opencl/videos/debug_resized_image.jpg");
+    // image_labeled = model.visulize(results, resized_image);
+    // cv::imwrite("/home/gkd/Opencl_vision/yolo_opencl/videos/debug_labled_image.jpg", image_labeled);
 
     /*Opencv DNN*/
     //加载
