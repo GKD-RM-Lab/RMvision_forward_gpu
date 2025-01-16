@@ -49,7 +49,7 @@ private:
     float* output_data;
     size_t num_boxes;
     size_t stride;
-    float yolo_cong_threshold = 0.08;   //置信度阈值
+    float yolo_cong_threshold = 0.2;   //置信度阈值
 
 public:
     void load(cv::String model_path, cv::String bin_path);

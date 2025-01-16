@@ -6,6 +6,7 @@
 
 #include "cl_inference.hpp"
 #include "vino_inference.hpp"
+#include "four_points.hpp"
 
 #include "timer.hpp"
 
@@ -20,6 +21,9 @@ static const int INPUT_HEIGHT = 640;
 // YoloInferencd_cl model;
 YoloInferencd_vino model;
 
+FourPointsLoader loader;
+
+
 void gpu_accel_check();
 
 int main(int argc, char** argv) {
@@ -28,14 +32,44 @@ int main(int argc, char** argv) {
     //启用opencl
     cv::ocl::setUseOpenCL(true);
 
-    cv::Mat inputImage; // = cv::Mat::zeros(INPUT_HEIGHT, INPUT_WIDTH, CV_8UC3);
-    inputImage = cv::imread("/home/gkd/Opencl_vision/yolo_opencl/videos/30128.jpg");
+    // FourPointsLabelType label;
+    std::vector<FourPointsLabelType> labels;
+    // loader.read_label("/home/gkd/Opencl_vision/yolo_opencl/dataset/XJTLU_2023_Keypoints_ALL/labels/3.txt",
+    //                 label);
+    labels = loader.read_labels("/home/gkd/Opencl_vision/yolo_opencl/dataset/XJTLU_2023_Keypoints_ALL/labels");
+    std::cout << loader.get_image_dir(labels[2].file_path) << std::endl;
+    std::cout << labels[2].y4 << std::endl;
+    loader.visulize_label(labels[2288]);
+    
 
-    /*Openvino test*/
+    //debug 提早结束
+    return 0;
+
+    cv::Mat inputImage; // = cv::Mat::zeros(INPUT_HEIGHT, INPUT_WIDTH, CV_8UC3);
+    inputImage = cv::imread("/home/gkd/Opencl_vision/yolo_opencl/videos/}~V``NO(M1Z1MN7DLIDW{YM.png");
+
+    /*Openvino 推理测试*/
     model.load("/home/gkd/Opencl_vision/yolo_opencl/models/yolov5-rm/distilbert.xml",
                 "/home/gkd/Opencl_vision/yolo_opencl/models/yolov5-rm/distilbert.bin");
 
-    model.forward(model.pre_process(inputImage));
+    Timer timer;
+
+    // for(int i=0; i<1000; i++)
+    // {
+        double time1, time2;
+        timer.begin();
+        ov::Tensor input_array =  model.pre_process(inputImage);
+        timer.end();
+        time1 = timer.read();
+        std::cout << "preprocess time :" << timer.read() << std::endl;
+
+        timer.begin();
+        model.forward(input_array);
+        timer.end();
+        time2 = timer.read();
+        std::cout << "forward time :" << timer.read() << std::endl;
+        std::cout << "total time :" << time1+time2 << std::endl;
+    // }
 
     std::vector<yolo_detec_box> results;
 
