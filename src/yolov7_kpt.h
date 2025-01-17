@@ -31,7 +31,7 @@
 #if DETECT_MODE == 0 // 装甲板四点模型
 #define KPT_NUM 4
 #define CLS_NUM 14
-#define MODEL_PATH "/home/gkd/Opencl_vision/yolo_opencl/models/rm-yolov7/distilbert.xml","/home/gkd/Opencl_vision/yolo_opencl/models/rm-yolov7/distilbert.bin"
+#define MODEL_PATH "/home/gkd/Opencl_vision/yolo_opencl/models/rmyolo-v7-best/distilbert.xml","/home/gkd/Opencl_vision/yolo_opencl/models/rmyolo-v7-best/distilbert.bin"
 #elif DETECT_MODE == 1 // 能量机关五点模型
 #define KPT_NUM 5
 #define CLS_NUM 4

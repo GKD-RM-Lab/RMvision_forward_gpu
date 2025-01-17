@@ -31,17 +31,34 @@ int main(int argc, char** argv) {
     cv::ocl::setUseOpenCL(true);
 
     cv::Mat inputImage; // = cv::Mat::zeros(INPUT_HEIGHT, INPUT_WIDTH, CV_8UC3);
-    inputImage = cv::imread("/home/gkd/Opencl_vision/yolo_opencl/videos/IMG_20250115_204851.jpg");
+    inputImage = cv::imread("/home/gkd/Opencl_vision/yolo_opencl/videos/red2-test-3.png");
 
 
     /*犀浦模型*/
     yolo_kpt model;
     std::vector<yolo_kpt::Object> result;
 
-    result = model.work(inputImage);
+    // 耗时统计
+    Timer timer;
+    for(int i=0; i<1000; i++)
+    {
+        timer.begin();
+        result = model.work(inputImage);
+        timer.end();
+        std::cout << "total:" << timer.read() << std::endl;
+        std::cout << "---------------" << std::endl;
+    }
 
-    
-
+    if(result.size() > 0)
+    {
+        std::cout << result.size() << std::endl;
+        std::cout << result[0].kpt << std::endl;
+        for(int i=0; i<4; i++)
+        {
+            cv::circle(inputImage, result[0].kpt[i], 3, cv::Scalar(255,0,0), 3);
+        }
+    }
+    cv::imwrite("../videos/debug_labled_image.jpg", inputImage);
     /*Openvino test*/
     // model.load("/home/gkd/Opencl_vision/yolo_opencl/models/yolov5-rm/distilbert.xml",
     //             "/home/gkd/Opencl_vision/yolo_opencl/models/yolov5-rm/distilbert.bin");
