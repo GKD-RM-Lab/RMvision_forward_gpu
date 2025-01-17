@@ -7,7 +7,7 @@
 #include "cl_inference.hpp"
 #include "vino_inference.hpp"
 
-#include "yolov7_kpt.h"
+#include "rmyolov7_inference.h"
 
 #include "timer.hpp"
 
@@ -62,14 +62,22 @@ int main(int argc, char** argv) {
             , cv::Size(1280, 720));
 
 
+    Timer timer;
+
+
     while(1)
     {   
         //读取视频帧
         video.read(inputImage);
         if(inputImage.empty()) break;
 
-        //推理
+        //识别图像（前处理+推理+后处理）
+        timer.begin();
         result = model.work(inputImage);
+        timer.end();
+        std::cout << "total time:" << timer.read() << std::endl;
+        std::cout << "--------------------" << std::endl;
+        
         //输出信息&绘图
         inputImage = visual_label(inputImage, result);
 
@@ -107,7 +115,7 @@ std::string label2string(int num) {
         // 对应 "RO", "RS"
         return (num == 13) ? "RO" : "RS";
     } else {
-        return "Invalid number"; // 如果超出范围
+        return "err"; // 如果超出范围
     }
 }
 

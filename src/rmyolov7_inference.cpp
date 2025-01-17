@@ -1,4 +1,4 @@
-#include "yolov7_kpt.h"
+#include "rmyolov7_inference.h"
 #include "timer.hpp"    //debug
 
 
@@ -231,6 +231,7 @@ std::vector<yolo_kpt::Object> yolo_kpt::work(cv::Mat src_img) {
 
     Timer timer;
 
+    /*----------------------前处理-------------------------*/
     timer.begin();
     cv::Mat boxed = letter_box(src_img, img_h, img_w, padd);
     cv::cvtColor(boxed, img, cv::COLOR_BGR2RGB);
@@ -246,6 +247,7 @@ std::vector<yolo_kpt::Object> yolo_kpt::work(cv::Mat src_img) {
     timer.end();
     std::cout << "preprocess time:" << timer.read() << std::endl;
 
+    /*---------------------推理----------------------*/
     timer.begin();
     infer_request.set_input_tensor(input_tensor1);
 //    infer_request.infer(); //推理并获得三个提取头
@@ -258,9 +260,11 @@ std::vector<yolo_kpt::Object> yolo_kpt::work(cv::Mat src_img) {
     auto output_tensor_p32 = infer_request.get_output_tensor(2);
     const float *result_p32 = output_tensor_p32.data<const float>();
     timer.end();
-    std::cout << "inference time" << timer.read() << std::endl;
+    std::cout << "inference time:" << timer.read() << std::endl;
 
 
+    /*------------------------后处理----------------------*/
+    timer.begin();
     std::vector<Object> proposals;
     std::vector<Object> objects8;
     std::vector<Object> objects16;
@@ -301,6 +305,8 @@ std::vector<yolo_kpt::Object> yolo_kpt::work(cv::Mat src_img) {
         if (KPT_NUM != 0)
             obj.kpt = scaled_point;
         object_result.push_back(obj);
+        timer.end();
+        std::cout << "postprocess time:" << timer.read() << std::endl;
 
 #ifdef VIDEO
         if (DETECT_MODE == 1 && classIds[picked[i]] == 0)

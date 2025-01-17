@@ -26,12 +26,12 @@
 #define ANCHOR 3 //anchor 数量
 #define DETECT_MODE 0 //ARMOR 0 WIN 1 BOARD 2
 #define DEVICE "GPU" // 设备选择
-#define VIDEO //是否展示推理视频
+// #define VIDEO //是否展示推理视频
 
 #if DETECT_MODE == 0 // 装甲板四点模型
 #define KPT_NUM 4
 #define CLS_NUM 14
-#define MODEL_PATH "/home/gkd/Opencl_vision/yolo_opencl/models/rmyolo-v7-best/distilbert.xml","/home/gkd/Opencl_vision/yolo_opencl/models/rmyolo-v7-best/distilbert.bin"
+#define MODEL_PATH "../models/rmyolo-v7-best/distilbert.xml","../models/rmyolo-v7-best/distilbert.bin"
 #elif DETECT_MODE == 1 // 能量机关五点模型
 #define KPT_NUM 5
 #define CLS_NUM 4
