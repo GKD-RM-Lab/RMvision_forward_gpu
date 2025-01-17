@@ -20,7 +20,7 @@
 // using namespace InferenceEngine;
 
 #define NMS_THRESHOLD 0.10f //NMS参数
-#define CONF_THRESHOLD 0.10f //置信度参数
+#define CONF_THRESHOLD 0.60f //置信度参数
 #define CONF_REMAIN 0.0 //保留一帧保留的权重比例，如果不保留填写为0
 #define IMG_SIZE  640  //推理图像大小，如果不是640 和 416 需要自己在下面添加anchor
 #define ANCHOR 3 //anchor 数量
