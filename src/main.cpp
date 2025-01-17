@@ -6,7 +6,8 @@
 
 #include "cl_inference.hpp"
 #include "vino_inference.hpp"
-#include "four_points.hpp"
+
+#include "rmyolov7_inference.h"
 
 #include "timer.hpp"
 
@@ -21,7 +22,9 @@ static const int INPUT_HEIGHT = 640;
 // YoloInferencd_cl model;
 YoloInferencd_vino model;
 
-FourPointsLoader loader;
+
+std::string label2string(int num);
+cv::Mat visual_label(cv::Mat inputImage, std::vector<yolo_kpt::Object> result);
 
 
 void gpu_accel_check();
@@ -46,58 +49,108 @@ int main(int argc, char** argv) {
     return 0;
 
     cv::Mat inputImage; // = cv::Mat::zeros(INPUT_HEIGHT, INPUT_WIDTH, CV_8UC3);
-    inputImage = cv::imread("/home/gkd/Opencl_vision/yolo_opencl/videos/}~V``NO(M1Z1MN7DLIDW{YM.png");
+    inputImage = cv::imread("../videos/red2-test-3.png");
 
-    /*Openvino 推理测试*/
-    model.load("/home/gkd/Opencl_vision/yolo_opencl/models/yolov5-rm/distilbert.xml",
-                "/home/gkd/Opencl_vision/yolo_opencl/models/yolov5-rm/distilbert.bin");
+
+    yolo_kpt model;
+    std::vector<yolo_kpt::Object> result;
+
+    //推理
+    result = model.work(inputImage);
+    inputImage = visual_label(inputImage, result);
+    //输出信息&绘图
+
+
+
+    /*视频处理：*/
+
+    //视频读取
+    cv::VideoCapture video("../videos/autoaim-test-5.mp4");
+
+    //视频写入
+    cv::VideoWriter writer("../videos/debug_autoaim_label.avi"
+            , cv::VideoWriter::fourcc('M', 'J', 'P', 'G')
+            , 30
+            , cv::Size(1280, 720));
+
 
     Timer timer;
 
-    // for(int i=0; i<1000; i++)
-    // {
-        double time1, time2;
+
+    while(1)
+    {   
+        //读取视频帧
+        video.read(inputImage);
+        if(inputImage.empty()) break;
+
+        //识别图像（前处理+推理+后处理）
         timer.begin();
-        ov::Tensor input_array =  model.pre_process(inputImage);
+        result = model.work(inputImage);
         timer.end();
-        time1 = timer.read();
-        std::cout << "preprocess time :" << timer.read() << std::endl;
+        std::cout << "total time:" << timer.read() << std::endl;
+        std::cout << "--------------------" << std::endl;
+        
+        //输出信息&绘图
+        inputImage = visual_label(inputImage, result);
 
-        timer.begin();
-        model.forward(input_array);
-        timer.end();
-        time2 = timer.read();
-        std::cout << "forward time :" << timer.read() << std::endl;
-        std::cout << "total time :" << time1+time2 << std::endl;
-    // }
+        //写入带标签的图片到视频
+        if(inputImage.empty()) break;
+        writer.write(inputImage);
 
-    std::vector<yolo_detec_box> results;
+    }
 
-    results = model.post_process();
+    video.release();
+    writer.release();
 
-    //debug 输出推理结果
-    std::cout << "results_num=" << results.size() << std::endl;
-    std::cout << "(" << results[0].x << "," << results[0].y << ") ->";
-    std::cout << "(" << results[0].h << "," << results[0].w << "),";
-    std::cout << "class_id=" << results[0].class_result << ", conf=" << results[0].conf << std::endl;
+    // cv::imwrite("../videos/debug_labled_image.jpg", inputImage);
+    // -------------------------------------------
 
-    //debug 可视化
-    cv::Mat image_labeled;
-    cv::Mat resized_image = cv::imread("/home/gkd/Opencl_vision/yolo_opencl/videos/debug_resized_image.jpg");
-    image_labeled = model.visulize(results, resized_image);
-    cv::imwrite("/home/gkd/Opencl_vision/yolo_opencl/videos/debug_labled_image.jpg", image_labeled);
-
-    /*Opencv DNN*/
-    //加载
-    // model.load("../models/yolov5n.onnx");
-    // //推理
-    // model.forward(inputImage);
 
 
     return 0;
 }
 
 
+
+//label -> 标签字符串
+std::string label2string(int num) {
+    if (num >= 0 && num <= 4) {
+        // 对应 "B1" 到 "B5"
+        return "B" + std::to_string(num + 1);
+    } else if (num == 5 || num == 6 || num == 7) {
+        // 对应 "BO", "BS"
+        return (num == 5) ? "BO" : "BS";
+    } else if (num >= 8 && num <= 12) {
+        // 对应 "R1" 到 "R5"
+        return "R" + std::to_string(num - 7);
+    } else if (num == 13) {
+        // 对应 "RO", "RS"
+        return (num == 13) ? "RO" : "RS";
+    } else {
+        return "err"; // 如果超出范围
+    }
+}
+
+//可视化results
+cv::Mat visual_label(cv::Mat inputImage, std::vector<yolo_kpt::Object> result)
+{
+    if(result.size() > 0)
+    {
+        for(int j=0; j<result.size(); j++)
+        {
+            for(int i=0; i<4; i++)
+            {
+                cv::rectangle(inputImage, result[j].rect, cv::Scalar(255,0,0), 5);
+                cv::circle(inputImage, result[j].kpt[i], 3, cv::Scalar(0,255,0), 3);
+            }
+                char text[50];
+                std::sprintf(text, "%s - P%.2f", label2string(result[j].label).c_str(), result[j].prob);
+                cv::putText(inputImage, text, cv::Point(result[j].rect.x, result[j].rect.y)
+                , cv::FONT_HERSHEY_SIMPLEX, 1.2, cv::Scalar(0,0,255), 3);
+        }
+    }
+    return inputImage;
+}
 
 
 void gpu_accel_check()
