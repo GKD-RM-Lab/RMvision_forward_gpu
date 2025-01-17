@@ -14,11 +14,6 @@
 //openvino
 #include <openvino/openvino.hpp>
 
-
-// YOLOv5 默认输入尺寸为 640
-static const int INPUT_WIDTH = 640;
-static const int INPUT_HEIGHT = 640;
-
 // YoloInferencd_cl model;
 YoloInferencd_vino model;
 
@@ -35,23 +30,11 @@ int main(int argc, char** argv) {
     //启用opencl
     cv::ocl::setUseOpenCL(true);
 
-    // FourPointsLabelType label;
-    std::vector<FourPointsLabelType> labels;
-    // loader.read_label("/home/gkd/Opencl_vision/yolo_opencl/dataset/XJTLU_2023_Keypoints_ALL/labels/3.txt",
-    //                 label);
-    labels = loader.read_labels("/home/gkd/Opencl_vision/yolo_opencl/dataset/XJTLU_2023_Keypoints_ALL/labels");
-    std::cout << loader.get_image_dir(labels[2].file_path) << std::endl;
-    std::cout << labels[2].y4 << std::endl;
-    loader.visulize_label(labels[2288]);
-    
-
-    //debug 提早结束
-    return 0;
-
     cv::Mat inputImage; // = cv::Mat::zeros(INPUT_HEIGHT, INPUT_WIDTH, CV_8UC3);
     inputImage = cv::imread("../videos/red2-test-3.png");
 
 
+    /*犀浦模型*/
     yolo_kpt model;
     std::vector<yolo_kpt::Object> result;
 
