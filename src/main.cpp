@@ -20,7 +20,7 @@ YoloInferencd_vino model;
 
 std::string label2string(int num);
 cv::Mat visual_label(cv::Mat inputImage, std::vector<yolo_kpt::Object> result);
-
+void removePointsOutOfRect(std::vector<cv::Point2f>& kpt, const cv::Rect2f& rect);
 
 void gpu_accel_check();
 
@@ -31,7 +31,7 @@ int main(int argc, char** argv) {
     cv::ocl::setUseOpenCL(true);
 
     cv::Mat inputImage; // = cv::Mat::zeros(INPUT_HEIGHT, INPUT_WIDTH, CV_8UC3);
-    inputImage = cv::imread("../videos/red2-test-3.png");
+    inputImage = cv::imread("../videos/R3_test.jpg");
 
 
     /*犀浦模型*/
@@ -48,7 +48,7 @@ int main(int argc, char** argv) {
     /*视频处理：*/
 
     //视频读取
-    cv::VideoCapture video("../videos/autoaim-test-5.mp4");
+    cv::VideoCapture video("../videos/full-test-1.mp4");
 
     //视频写入
     cv::VideoWriter writer("../videos/debug_autoaim_label.avi"
@@ -57,8 +57,8 @@ int main(int argc, char** argv) {
             , cv::Size(1280, 720));
 
 
-    Timer timer;
-
+    Timer timer, timer2;
+    timer2.begin();
 
     while(1)
     {   
@@ -75,10 +75,16 @@ int main(int argc, char** argv) {
         
         //输出信息&绘图
         inputImage = visual_label(inputImage, result);
+        cv::imshow("label", inputImage);
+        cv::waitKey(1);
 
         //写入带标签的图片到视频
         if(inputImage.empty()) break;
         writer.write(inputImage);
+
+        timer2.end();
+        std::cout << "display->" << 1000/timer2.read() << "fps" << std::endl;
+        timer2.begin();
 
     }
 
@@ -121,20 +127,56 @@ cv::Mat visual_label(cv::Mat inputImage, std::vector<yolo_kpt::Object> result)
     {
         for(int j=0; j<result.size(); j++)
         {
-            for(int i=0; i<4; i++)
+            //剔除无效点
+            removePointsOutOfRect(result[j].kpt, result[j].rect);
+
+            //画出所有有效点
+            for(int i=0; i<result[j].kpt.size(); i++)
             {
-                cv::rectangle(inputImage, result[j].rect, cv::Scalar(255,0,0), 5);
                 cv::circle(inputImage, result[j].kpt[i], 3, cv::Scalar(0,255,0), 3);
             }
-                char text[50];
-                std::sprintf(text, "%s - P%.2f", label2string(result[j].label).c_str(), result[j].prob);
-                cv::putText(inputImage, text, cv::Point(result[j].rect.x, result[j].rect.y)
-                , cv::FONT_HERSHEY_SIMPLEX, 1.2, cv::Scalar(0,0,255), 3);
+
+            if(result[j].kpt.size() == 4)
+            {
+                cv::line(inputImage, result[j].kpt[0], result[j].kpt[1], cv::Scalar(0,255,0), 5);
+                cv::line(inputImage, result[j].kpt[1], result[j].kpt[2], cv::Scalar(0,255,0), 5);
+                cv::line(inputImage, result[j].kpt[2], result[j].kpt[3], cv::Scalar(0,255,0), 5);
+                cv::line(inputImage, result[j].kpt[3], result[j].kpt[0], cv::Scalar(0,255,0), 5);
+            }
+
+            if(result[j].kpt.size() == 3)
+            {
+                cv::line(inputImage, result[j].kpt[0], result[j].kpt[1], cv::Scalar(0,255,0), 5);
+                cv::line(inputImage, result[j].kpt[1], result[j].kpt[2], cv::Scalar(0,255,0), 5);
+                cv::line(inputImage, result[j].kpt[2], result[j].kpt[0], cv::Scalar(0,255,0), 5);
+            }
+
+            //判定框
+            cv::rectangle(inputImage, result[j].rect, cv::Scalar(255,0,0), 5);
+            //文字
+            char text[50];
+            std::sprintf(text, "%s - P%.2f", label2string(result[j].label).c_str(), result[j].prob);
+            cv::putText(inputImage, text, cv::Point(result[j].kpt[0].x, result[j].kpt[0].y)
+            , cv::FONT_HERSHEY_SIMPLEX, 1.2, cv::Scalar(0,0,255), 3);
         }
     }
     return inputImage;
 }
 
+/*剔除不在判定框中的特征点*/
+void removePointsOutOfRect(std::vector<cv::Point2f>& kpt, const cv::Rect2f& rect)
+{
+    // 使用 remove_if + erase 在原地剔除不在矩形内的点
+    kpt.erase(
+        std::remove_if(kpt.begin(), kpt.end(),
+            [&rect](const cv::Point2f& p) {
+                // 若点不在矩形内，返回 true 表示要被移除
+                return !rect.contains(p);
+            }
+        ),
+        kpt.end()
+    );
+}
 
 void gpu_accel_check()
 {
