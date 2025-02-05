@@ -14,6 +14,7 @@
 //openvino
 #include <openvino/openvino.hpp>
 
+#include <thread>
 
 std::string label2string(int num);
 cv::Mat visual_label(cv::Mat inputImage, std::vector<yolo_kpt::Object> result);
@@ -57,14 +58,26 @@ int main(int argc, char** argv) {
     Timer timer, timer2;
     timer2.begin();
 
-    //DEBUG
-    hik_cam_task();
+    //相机线程
+    std::thread cameraThread(HIKcamtask);
+
+    // while(1)
+    // {
+    //     // HIKimage.copyTo(inputImage);
+    //     // cv::imshow("frame", inputImage);
+    //     std::cout << HIKimage.size() << std::endl;
+    //     std::cout << HIKimage.empty() << std::endl;
+    // }
 
     while(1)
     {   
         //读取视频帧
-        video.read(inputImage);
-        if(inputImage.empty()) break;
+        // video.read(inputImage);
+        // if(inputImage.empty()) break;
+        HIKframemtx.lock();
+        HIKimage.copyTo(inputImage);
+        HIKframemtx.unlock();
+        if(inputImage.empty()) continue;
 
         //识别图像（前处理+推理+后处理）
         timer.begin();
@@ -79,8 +92,8 @@ int main(int argc, char** argv) {
         cv::waitKey(1);
 
         //写入带标签的图片到视频
-        if(inputImage.empty()) break;
-        writer.write(inputImage);
+        // if(inputImage.empty()) break;
+        // writer.write(inputImage);
 
         timer2.end();
         std::cout << "display->" << 1000/timer2.read() << "fps" << std::endl;

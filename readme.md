@@ -1,3 +1,7 @@
+## TODO
+- 前处理&推理&后处理和socket发送 异步运行
+- 加入相机标定功能和PNP解算
+
 ## 环境要求
 - OpenCL 3.0
 - Opencv >= 4.8 并且开启DNN和OpenCL模块

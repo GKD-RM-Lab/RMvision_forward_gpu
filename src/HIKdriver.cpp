@@ -1,6 +1,7 @@
 #include "HIKdriver.hpp"
 
-
+cv::Mat HIKimage;
+std::mutex HIKframemtx;
 
 bool PrintDeviceInfo(MV_CC_DEVICE_INFO* pstMVDevInfo)
 {
@@ -34,7 +35,7 @@ bool PrintDeviceInfo(MV_CC_DEVICE_INFO* pstMVDevInfo)
     return true;
 }
 
-int hik_cam_task()
+int HIKcamtask()
 {
     int nRet = MV_OK;
 
@@ -152,7 +153,7 @@ int hik_cam_task()
             break;
         }
 
-        cv::Mat frame,image;
+        cv::Mat frame, image;
         unsigned int nDataSize = stParam.nCurValue;
         nRet = MV_CC_GetOneFrameTimeout(handle, pData, nDataSize, &stImageInfo, 1000);
         if (MV_OK != nRet)
@@ -199,22 +200,30 @@ int hik_cam_task()
                     printf("MV_CC_ConvertPixelType fail! nRet [%x]\n", nRet);
                     break;
                 }
-                image = cv::Mat(cv::Size(stImageInfo.nWidth, stImageInfo.nHeight), CV_8UC3, pDataForRGB); 
-                cv::cvtColor(image, frame, cv::COLOR_RGB2BGR); 
-                cv::imshow("frame", frame);
-                MVCC_FLOATVALUE val;
-                MV_CC_GetFrameRate(handle, &val);
-                std::cout << "fps:" << val.fCurValue 
-                << "max:" << val.fMax 
-                << "min:" << val.fMin << std::endl;
-                
-                // 按下ESC键退出循环
-                int keyCode = cv::waitKey(30);
-                if (keyCode == 27) {
-                    break;
+                frame = cv::Mat(cv::Size(stImageInfo.nWidth, stImageInfo.nHeight), CV_8UC3, pDataForRGB); 
+                cv::cvtColor(frame, image, cv::COLOR_RGB2BGR); 
+
+                HIKframemtx.lock();
+                image.copyTo(HIKimage);
+                HIKframemtx.unlock();
+
+                /*DEBUG选项*/
+                if(False)
+                {
+                    cv::imshow("frame", frame);
+                    MVCC_FLOATVALUE val;
+                    MV_CC_GetFrameRate(handle, &val);
+                    std::cout << "fps:" << val.fCurValue 
+                    << "max:" << val.fMax 
+                    << "min:" << val.fMin << std::endl;
+                    // 按下ESC键退出循环
+                    int keyCode = cv::waitKey(30);
+                    if (keyCode == 27) {
+                        break;
+                    }
+                    cv::destroyWindow;
+                    cv::destroyAllWindows;
                 }
-                cv::destroyWindow;
-                cv::destroyAllWindows;
 
             }
         else

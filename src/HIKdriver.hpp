@@ -17,6 +17,9 @@
 #include <opencv2/imgproc.hpp>
 #include <pthread.h>
 
-int hik_cam_task();
+extern cv::Mat HIKimage;
+extern std::mutex HIKframemtx;
+
+int HIKcamtask();
 
 #endif
