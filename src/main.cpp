@@ -4,8 +4,7 @@
 #include <opencv2/dnn.hpp>
 #include <iostream>
 
-#include "cl_inference.hpp"
-#include "vino_inference.hpp"
+
 
 #include "rmyolov7_inference.h"
 #include "HIKdriver.hpp"
@@ -14,9 +13,6 @@
 
 //openvino
 #include <openvino/openvino.hpp>
-
-// YoloInferencd_cl model;
-YoloInferencd_vino model;
 
 
 std::string label2string(int num);
