@@ -8,6 +8,7 @@
 #include "vino_inference.hpp"
 
 #include "rmyolov7_inference.h"
+#include "HIKdriver.hpp"
 
 #include "timer.hpp"
 
@@ -59,6 +60,9 @@ int main(int argc, char** argv) {
 
     Timer timer, timer2;
     timer2.begin();
+
+    //DEBUG
+    hik_cam_task();
 
     while(1)
     {   
