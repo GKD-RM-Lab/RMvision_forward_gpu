@@ -19,6 +19,7 @@
 std::string label2string(int num);
 cv::Mat visual_label(cv::Mat inputImage, std::vector<yolo_kpt::Object> result);
 void removePointsOutOfRect(std::vector<cv::Point2f>& kpt, const cv::Rect2f& rect);
+cv::Mat rect_cut(cv::Mat image);
 
 void gpu_accel_check();
 
@@ -79,6 +80,8 @@ int main(int argc, char** argv) {
         HIKframemtx.unlock();
         if(inputImage.empty()) continue;
 
+        inputImage = rect_cut(inputImage);
+
         //识别图像（前处理+推理+后处理）
         timer.begin();
         result = model.work(inputImage);
@@ -112,7 +115,24 @@ int main(int argc, char** argv) {
     return 0;
 }
 
+cv::Mat rect_cut(cv::Mat image)
+{
+    // 原始尺寸
+    int width = image.cols;   // 1440
+    int height = image.rows;  // 1080
 
+    // 计算裁剪区域 (居中裁剪1080x1080)
+    int cropSize = image.rows;
+    int x = (width - cropSize) / 2;  // 计算左上角x坐标
+    int y = 0;                       // 由于高度本身就是1080，无需调整
+
+    // 定义裁剪矩形
+    cv::Rect roi(x, y, cropSize, cropSize);
+
+    // 进行裁剪
+    cv::Mat croppedImage = image(roi).clone(); 
+    return croppedImage;
+}
 
 //label -> 标签字符串
 std::string label2string(int num) {
