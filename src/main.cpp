@@ -20,6 +20,7 @@ std::string label2string(int num);
 cv::Mat visual_label(cv::Mat inputImage, std::vector<yolo_kpt::Object> result);
 void removePointsOutOfRect(std::vector<cv::Point2f>& kpt, const cv::Rect2f& rect);
 cv::Mat rect_cut(cv::Mat image);
+int findMissingCorner(const std::vector<cv::Point2f>& pts);
 
 void gpu_accel_check();
 
@@ -62,14 +63,6 @@ int main(int argc, char** argv) {
     //相机线程
     std::thread cameraThread(HIKcamtask);
 
-    // while(1)
-    // {
-    //     // HIKimage.copyTo(inputImage);
-    //     // cv::imshow("frame", inputImage);
-    //     std::cout << HIKimage.size() << std::endl;
-    //     std::cout << HIKimage.empty() << std::endl;
-    // }
-
     while(1)
     {   
         //读取视频帧
@@ -89,18 +82,26 @@ int main(int argc, char** argv) {
         std::cout << "total time:" << timer.read() << std::endl;
         std::cout << "--------------------" << std::endl;
         
+        //fps
+        char text[50];
+        std::sprintf(text, "%.2fps, %.2fms", 1000/inf_time, inf_time);
+        cv::putText(inputImage, text, cv::Point(0,30)
+            , cv::FONT_HERSHEY_SIMPLEX, 1.2, cv::Scalar(0,255,0), 3);
+        
         //输出信息&绘图
         inputImage = visual_label(inputImage, result);
         cv::imshow("label", inputImage);
-        cv::waitKey(1);
+        if(cv::waitKey(1) == 'q') break;
+
+        timer2.end();
+        std::cout << "display->" << 1000/timer2.read() << "fps" << std::endl;
+        timer2.begin();
+
 
         //写入带标签的图片到视频
         // if(inputImage.empty()) break;
         // writer.write(inputImage);
 
-        timer2.end();
-        std::cout << "display->" << 1000/timer2.read() << "fps" << std::endl;
-        timer2.begin();
 
     }
 
@@ -113,6 +114,43 @@ int main(int argc, char** argv) {
 
 
     return 0;
+}
+
+//角点四缺一时候，用来判断缺了哪一个角点
+//返回值：0-左上，1-左下，2-右下，3-右上
+//模型返回角点的顺序：左上->左下->右下->右上
+int findMissingCorner(const std::vector<cv::Point2f>& trianglePoints)
+{
+    if (trianglePoints.size() != 3)
+        return -1;  
+
+    // 计算三条边长度
+    double d01 = cv::norm(trianglePoints[0] - trianglePoints[1]);
+    double d12 = cv::norm(trianglePoints[1] - trianglePoints[2]);
+    double d20 = cv::norm(trianglePoints[2] - trianglePoints[0]);
+
+    // 找出最长的边
+    int gapIndex = 0;
+    double maxGap = d01;
+    if (d12 > maxGap) { maxGap = d12; gapIndex = 1; }
+    if (d20 > maxGap) { maxGap = d20; gapIndex = 2; }
+
+    // 判断缺失角
+    if (gapIndex == 0)
+    {
+        return 1;
+    }
+    else if (gapIndex == 1)
+    {
+        return 2;
+    }
+    else  
+    {
+        if (d01 < d12)
+            return 3;
+        else
+            return 0;
+    }
 }
 
 cv::Mat rect_cut(cv::Mat image)
@@ -136,21 +174,10 @@ cv::Mat rect_cut(cv::Mat image)
 
 //label -> 标签字符串
 std::string label2string(int num) {
-    if (num >= 0 && num <= 4) {
-        // 对应 "B1" 到 "B5"
-        return "B" + std::to_string(num + 1);
-    } else if (num == 5 || num == 6 || num == 7) {
-        // 对应 "BO", "BS"
-        return (num == 5) ? "BO" : "BS";
-    } else if (num >= 8 && num <= 12) {
-        // 对应 "R1" 到 "R5"
-        return "R" + std::to_string(num - 7);
-    } else if (num == 13) {
-        // 对应 "RO", "RS"
-        return (num == 13) ? "RO" : "RS";
-    } else {
-        return "err"; // 如果超出范围
-    }
+    std::vector<std::string> class_names = {
+        "B1", "B2", "B3", "B4", "B5", "BO", "BS", "R1", "R2", "R3", "R4", "R5", "RO", "RS"
+    };
+    return class_names[num];
 }
 
 //可视化results
@@ -167,7 +194,17 @@ cv::Mat visual_label(cv::Mat inputImage, std::vector<yolo_kpt::Object> result)
             for(int i=0; i<result[j].kpt.size(); i++)
             {
                 cv::circle(inputImage, result[j].kpt[i], 3, cv::Scalar(0,255,0), 3);
+                char text[10];
+                std::sprintf(text, "%d", i);
+                cv::putText(inputImage, text, cv::Point(result[j].kpt[i].x, result[j].kpt[i].y)
+                , cv::FONT_HERSHEY_SIMPLEX, 1.2, cv::Scalar(0,0,255), 2);
             }
+
+            //文字
+
+
+            //判定框
+            // cv::rectangle(inputImage, result[j].rect, cv::Scalar(255,0,0), 5);
 
             if(result[j].kpt.size() == 4)
             {
@@ -175,6 +212,10 @@ cv::Mat visual_label(cv::Mat inputImage, std::vector<yolo_kpt::Object> result)
                 cv::line(inputImage, result[j].kpt[1], result[j].kpt[2], cv::Scalar(0,255,0), 5);
                 cv::line(inputImage, result[j].kpt[2], result[j].kpt[3], cv::Scalar(0,255,0), 5);
                 cv::line(inputImage, result[j].kpt[3], result[j].kpt[0], cv::Scalar(0,255,0), 5);
+                // char text[50];
+                // std::sprintf(text, "%s - P%.2f", label2string(result[j].label).c_str(), result[j].prob);
+                // cv::putText(inputImage, text, cv::Point(result[j].kpt[3].x, result[j].kpt[3].y)
+                // , cv::FONT_HERSHEY_SIMPLEX, 1.2, cv::Scalar(0,0,255), 3);
             }
 
             if(result[j].kpt.size() == 3)
@@ -182,15 +223,12 @@ cv::Mat visual_label(cv::Mat inputImage, std::vector<yolo_kpt::Object> result)
                 cv::line(inputImage, result[j].kpt[0], result[j].kpt[1], cv::Scalar(0,255,0), 5);
                 cv::line(inputImage, result[j].kpt[1], result[j].kpt[2], cv::Scalar(0,255,0), 5);
                 cv::line(inputImage, result[j].kpt[2], result[j].kpt[0], cv::Scalar(0,255,0), 5);
+                char text[50];
+                std::sprintf(text, "%s - %d", label2string(result[j].label).c_str(), findMissingCorner(result[j].kpt));
+                cv::putText(inputImage, text, cv::Point(result[j].kpt[2].x, result[j].kpt[2].y)
+                , cv::FONT_HERSHEY_SIMPLEX, 1.2, cv::Scalar(0,0,255), 3);
             }
 
-            //判定框
-            cv::rectangle(inputImage, result[j].rect, cv::Scalar(255,0,0), 5);
-            //文字
-            char text[50];
-            std::sprintf(text, "%s - P%.2f", label2string(result[j].label).c_str(), result[j].prob);
-            cv::putText(inputImage, text, cv::Point(result[j].kpt[0].x, result[j].kpt[0].y)
-            , cv::FONT_HERSHEY_SIMPLEX, 1.2, cv::Scalar(0,0,255), 3);
         }
     }
     return inputImage;

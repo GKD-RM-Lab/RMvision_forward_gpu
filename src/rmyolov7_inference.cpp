@@ -1,6 +1,7 @@
 #include "rmyolov7_inference.h"
 #include "timer.hpp"    //debug
 
+float inf_time = 1.0;
 
 yolo_kpt::yolo_kpt() {
     model = core.read_model(MODEL_PATH);
@@ -261,7 +262,8 @@ std::vector<yolo_kpt::Object> yolo_kpt::work(cv::Mat src_img) {
     const float *result_p32 = output_tensor_p32.data<const float>();
     timer.end();
     std::cout << "inference time:" << timer.read() << std::endl;
-
+    /*debug*/
+    inf_time = timer.read();
 
     /*------------------------后处理----------------------*/
     timer.begin();
@@ -305,8 +307,6 @@ std::vector<yolo_kpt::Object> yolo_kpt::work(cv::Mat src_img) {
         if (KPT_NUM != 0)
             obj.kpt = scaled_point;
         object_result.push_back(obj);
-        timer.end();
-        std::cout << "postprocess time:" << timer.read() << std::endl;
 
 #ifdef VIDEO
         if (DETECT_MODE == 1 && classIds[picked[i]] == 0)
@@ -314,6 +314,8 @@ std::vector<yolo_kpt::Object> yolo_kpt::work(cv::Mat src_img) {
                      class_names);
 #endif
     }
+    timer.end();
+    std::cout << "postprocess time:" << timer.read() << std::endl;
 #ifdef VIDEO
     // cv::imshow("Inference frame", src_img);
     // cv::waitKey(1);

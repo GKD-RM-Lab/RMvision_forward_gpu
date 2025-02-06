@@ -168,8 +168,8 @@ int HIKcamtask()
 
         //设置相机gain（类似ISO）
         MV_CC_SetGain(handle, 17);
-        MV_CC_SetExposureTime(handle, 8000);
-        MV_CC_SetFrameRate(handle, 120.0);
+        MV_CC_SetExposureTime(handle, 16000);
+        MV_CC_SetFrameRate(handle, 60.0);
         while(1){
     
             nRet = MV_CC_GetOneFrameTimeout(handle, pData, nDataSize, &stImageInfo, 1000);
