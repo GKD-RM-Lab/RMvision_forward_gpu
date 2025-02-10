@@ -75,6 +75,8 @@
         "netfwd": "cpp",
         "timer": "cpp",
         "future": "cpp",
-        "filesystem": "cpp"
+        "filesystem": "cpp",
+        "ranges": "cpp",
+        "valarray": "cpp"
     }
 }

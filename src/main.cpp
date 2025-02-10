@@ -11,6 +11,9 @@
 
 #include "timer.hpp"
 
+//cam calib
+#include "cam_calibration.hpp"
+
 //openvino
 #include <openvino/openvino.hpp>
 
@@ -62,6 +65,9 @@ int main(int argc, char** argv) {
 
     //相机线程
     std::thread cameraThread(HIKcamtask);
+
+    calibration_main();
+    return 0;
 
     while(1)
     {   
@@ -204,7 +210,7 @@ cv::Mat visual_label(cv::Mat inputImage, std::vector<yolo_kpt::Object> result)
 
 
             //判定框
-            // cv::rectangle(inputImage, result[j].rect, cv::Scalar(255,0,0), 5);
+            cv::rectangle(inputImage, result[j].rect, cv::Scalar(255,0,0), 5);
 
             if(result[j].kpt.size() == 4)
             {
@@ -212,10 +218,10 @@ cv::Mat visual_label(cv::Mat inputImage, std::vector<yolo_kpt::Object> result)
                 cv::line(inputImage, result[j].kpt[1], result[j].kpt[2], cv::Scalar(0,255,0), 5);
                 cv::line(inputImage, result[j].kpt[2], result[j].kpt[3], cv::Scalar(0,255,0), 5);
                 cv::line(inputImage, result[j].kpt[3], result[j].kpt[0], cv::Scalar(0,255,0), 5);
-                // char text[50];
-                // std::sprintf(text, "%s - P%.2f", label2string(result[j].label).c_str(), result[j].prob);
-                // cv::putText(inputImage, text, cv::Point(result[j].kpt[3].x, result[j].kpt[3].y)
-                // , cv::FONT_HERSHEY_SIMPLEX, 1.2, cv::Scalar(0,0,255), 3);
+                char text[50];
+                std::sprintf(text, "%s - P%.2f", label2string(result[j].label).c_str(), result[j].prob);
+                cv::putText(inputImage, text, cv::Point(result[j].kpt[3].x, result[j].kpt[3].y)
+                , cv::FONT_HERSHEY_SIMPLEX, 1.2, cv::Scalar(0,0,255), 3);
             }
 
             if(result[j].kpt.size() == 3)

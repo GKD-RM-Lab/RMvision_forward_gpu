@@ -42,6 +42,7 @@ link_directories(${CAMERA_LIB_DIR})
 # - ${OpenVINO_INCLUDE_DIRS}   (如果需要手动包含)
 include_directories(
     ${CMAKE_SOURCE_DIR}/lib/include
+    ${CMAKE_SOURCE_DIR}/lib
     ${OpenCV_INCLUDE_DIRS}
     # ${OpenVINO_INCLUDE_DIRS}  # 通常 find_package(OpenVINO) 已经处理
 )
