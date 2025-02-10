@@ -2,7 +2,7 @@
 #define CALIB_H
 
 #define IMG_COUNT 30
-#define SAMPLE_PERIOD 60
+#define SAMPLE_PERIOD 25
 
 
 #include <iostream>

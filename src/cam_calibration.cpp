@@ -118,64 +118,30 @@ int calibration_main()
                         mtx, dist, rvecs, tvecs);
 
     // 输出相机参数
-    writeCameraParametersToJson(mtx, dist, "../config/camera_paramets.json");
+    writeCameraParametersToJson(mtx, dist, "../config/camera_paramets.yaml");
     std::cout << "Camera Matrix:\n" << mtx << std::endl;
     std::cout << "Distortion Coefficients:\n" << dist << std::endl;
 
     return 0;
 }
 
-// 将cameraMatrix和distCoeffs写入到JSON文件
+// 将cameraMatrix和distCoeffs写入到YAML文件
 void writeCameraParametersToJson(const cv::Mat& cameraMatrix, const cv::Mat& distCoeffs, const std::string& filename) {
-    json j;
+    cv::FileStorage fs(filename, cv::FileStorage::WRITE);
 
-    for (int i = 0; i < cameraMatrix.rows; ++i) {
-        for (int k = 0; k < cameraMatrix.cols; ++k) {
-            j["cameraMatrix"][i][k] = cameraMatrix.at<double>(i, k);
-        }
-    }
-
-    for (int i = 0; i < distCoeffs.rows; ++i) {
-        for (int k = 0; k < distCoeffs.cols; ++k) {
-            j["distCoeffs"][i][k] = distCoeffs.at<double>(i, k);
-        }
-    }
-
-    std::ofstream file(filename);
-    if (!file) {
-        std::cerr << "Error opening file for writing: " << filename << std::endl;
-        return;
-    }
-    file << j.dump(4);  // formatted with indent 4
-    if (file.fail()) {
-        std::cerr << "Error writing to file: " << filename << std::endl;
-    }
-    file.close();
+    // 保存矩阵到文件
+    fs << "camera_matrix" << cameraMatrix;
+    fs << "distortion_coefficients" << distCoeffs;
+    fs.release();
 }
 
 
-// 从JSON文件读取cameraMatrix和distCoeffs
+// 从YAML文件读取cameraMatrix和distCoeffs
 void readCameraParametersFromJson(const std::string& filename, cv::Mat& cameraMatrix, cv::Mat& distCoeffs) {
-    std::ifstream file(filename);
-    json j;
-    file >> j;
 
-    // 创建相应大小的矩阵
-    cameraMatrix = cv::Mat(3, 3, CV_64F);
-    int distCoeffsSize = j["distCoeffs"].size() * j["distCoeffs"][0].size();
-    distCoeffs = cv::Mat(distCoeffsSize, 1, CV_64F);
-
-    // 读取cameraMatrix
-    for (int i = 0; i < cameraMatrix.rows; ++i) {
-        for (int k = 0; k < cameraMatrix.cols; ++k) {
-            cameraMatrix.at<double>(i, k) = j["cameraMatrix"][i][k];
-        }
-    }
-
-    // 读取distCoeffs
-    for (int i = 0; i < distCoeffs.rows; ++i) {
-        distCoeffs.at<double>(i) = j["distCoeffs"][0][i];
-    }
+    cv::FileStorage fs(filename, cv::FileStorage::READ);
+    fs["camera_matrix"] >> cameraMatrix;
+    fs["distortion_coefficients"] >> distCoeffs;
 }
 
 //获取系统时间戳
