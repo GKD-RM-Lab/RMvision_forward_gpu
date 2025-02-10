@@ -1,8 +1,8 @@
 #ifndef CALIB_H
 #define CALIB_H
 
-#define IMG_COUNT 200
-#define SAMPLE_PERIOD 5
+#define IMG_COUNT 30
+#define SAMPLE_PERIOD 60
 
 
 #include <iostream>
@@ -22,7 +22,12 @@ typedef struct
     cv::VideoCapture cam;
     int sample_period_count = 0;
     int cam_id = 0;             //相机ID
+    long int plate_lasttime = 0;    //上次检测到标定板的时间
     std::string video_path;     //或，视频文件路径
+    std::vector<std::vector<cv::Point3f>> objectPoints;
+    std::vector<std::vector<cv::Point2f>> imagePoints;
+    std::vector<cv::Point2f> corners;
+    std::vector<cv::Point3f> objP;
 }camera_cali_type;
 
 class camrea_calibtation
