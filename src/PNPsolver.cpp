@@ -12,23 +12,33 @@ int pnp_solver::calculate_all(std::vector<yolo_kpt::Object> &armors)
 //pnp求解单个装甲板
 int pnp_solver::calculate_single(yolo_kpt::Object &armor)
 {
-    if(armor.pnp_is_calculated == -1) return -1;
-    if(armor.kpt.size() == 4)
-    {
-        cv::solvePnP(object_4Points, armor.kpt
-            , cameraMatrix, distCoeffs, armor.pnp_rvec, armor.pnp_tvec);
-        armor.pnp_is_calculated = 1;
-        return 0;
-    }
-    if(armor.kpt.size() == 3)
-    {
-        cv::solvePnP(object_3Points[armor.kpt_lost_index], armor.kpt,
-            cameraMatrix, distCoeffs, armor.pnp_rvec, armor.pnp_tvec,
-            false, cv::SOLVEPNP_SQPNP);
-        armor.pnp_is_calculated = 1;
-        return 0;
-    }
+    if(armor.pnp_is_calculated == -1)
+        return -1;
 
+    try {
+        if (armor.kpt.size() == 4)
+        {
+            cv::solvePnP(object_4Points, armor.kpt, cameraMatrix, distCoeffs,
+                         armor.pnp_rvec, armor.pnp_tvec);
+            armor.pnp_is_calculated = 1;
+            return 0;
+        }
+        else if (armor.kpt.size() == 3)
+        {
+            cv::solvePnP(object_3Points[armor.kpt_lost_index], armor.kpt,
+                         cameraMatrix, distCoeffs, armor.pnp_rvec, armor.pnp_tvec,
+                         false, cv::SOLVEPNP_SQPNP);
+            armor.pnp_is_calculated = 1;
+            return 0;
+        }
+    }
+    catch (const cv::Exception &e)
+    {
+        std::cerr << "solvePnP encountered an error: " << e.what() << std::endl;
+        armor.pnp_is_calculated = -1;
+        return -1;
+    }
+    
     return -1;
 }
 

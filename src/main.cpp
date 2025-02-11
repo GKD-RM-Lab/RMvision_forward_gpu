@@ -232,7 +232,7 @@ cv::Mat visual_label(cv::Mat inputImage, std::vector<yolo_kpt::Object> result)
                     std::sprintf(text, "x%.2fy%.2fz%.2f", result[j].pnp_tvec.at<double>(0)
                     , result[j].pnp_tvec.at<double>(1), result[j].pnp_tvec.at<double>(2));
                     cv::putText(inputImage, text, cv::Point(result[j].kpt[3].x + 10, result[j].kpt[3].y + 30)
-                    , cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0,0,255), 3);
+                    , cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0,255,255), 3);
                 }
             }
 
@@ -253,7 +253,7 @@ cv::Mat visual_label(cv::Mat inputImage, std::vector<yolo_kpt::Object> result)
                     std::sprintf(text, "x%.2fy%.2fz%.2f", result[j].pnp_tvec.at<double>(0)
                     , result[j].pnp_tvec.at<double>(1), result[j].pnp_tvec.at<double>(2));
                     cv::putText(inputImage, text, cv::Point(result[j].kpt[2].x + 10, result[j].kpt[2].y + 30)
-                    , cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0,0,255), 3);
+                    , cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0,255,255), 3);
                 }
             }
 
