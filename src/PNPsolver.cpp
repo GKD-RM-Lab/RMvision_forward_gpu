@@ -3,7 +3,7 @@
 //pnp求解全部装甲板
 int pnp_solver::calculate_all(std::vector<yolo_kpt::Object> &armors)
 {
-    for(int i=0; i < armors.size(); i++){
+    for(size_t i=0; i < armors.size(); i++){
         calculate_single(armors[i]);
     }
     return 0;
@@ -50,10 +50,10 @@ pnp_solver::pnp_solver(const std::string& filename)
 
     //初始化物体坐标系
     std::vector<cv::Point3f> object_all = {
-        {armor_width/2,             light_height/2,              0},       //0-左上
-        {armor_width/2,             -light_height/2,             0},       //1-左下
-        {-armor_width/2,            -light_height/2,             0},       //2-右下
-        {-armor_width/2,            light_height/2,              0}        //3-右上
+        {light_height/2,             armor_width/2,              0},       //0-左上
+        {light_height/2,             -armor_width/2,             0},       //1-左下
+        {-light_height/2,            -armor_width/2,             0},       //2-右下
+        {-light_height/2,            armor_width/2,              0}        //3-右上
     };
 
     object_4Points = object_all;
