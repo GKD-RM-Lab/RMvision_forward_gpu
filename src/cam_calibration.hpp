@@ -1,8 +1,8 @@
 #ifndef CALIB_H
 #define CALIB_H
 
-#define IMG_COUNT 30
-#define SAMPLE_PERIOD 25
+#define IMG_COUNT 60
+#define SAMPLE_PERIOD 40
 
 
 #include <iostream>
@@ -23,6 +23,7 @@ typedef struct
     int sample_period_count = 0;
     int cam_id = 0;             //相机ID
     long int plate_lasttime = 0;    //上次检测到标定板的时间
+    int image_sample_isok = 0;
     std::string video_path;     //或，视频文件路径
     std::vector<std::vector<cv::Point3f>> objectPoints;
     std::vector<std::vector<cv::Point2f>> imagePoints;

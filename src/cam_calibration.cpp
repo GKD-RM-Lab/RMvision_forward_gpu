@@ -23,7 +23,7 @@ long int get_sysetm_time_ms();
 
 /*************** calibration settings ****************/
 cv::Size boardSize(9, 7); // 棋盘格的尺寸
-float squareSize = 10.0f; // 每格的大小，单位mm
+float squareSize = 15.0f; // 每格的大小，单位mm
 
 /*可视化线程*/
 int visulization_task()
@@ -45,10 +45,18 @@ int visulization_task()
         }
 
         //img count
-        char text[50];
-        std::sprintf(text, "image:%d/%d", IMG_COUNT, camera.frame_calib.size());
-        cv::putText(frame, text, cv::Point(0,30)
-            , cv::FONT_HERSHEY_SIMPLEX, 1.2, cv::Scalar(0,255,0), 3);
+        if(camera.image_sample_isok == 0)
+        {
+            char text[50];
+            std::sprintf(text, "image:%d/%d", IMG_COUNT, camera.frame_calib.size());
+            cv::putText(frame, text, cv::Point(0,30)
+                , cv::FONT_HERSHEY_SIMPLEX, 1.2, cv::Scalar(0,0,255), 3);
+        }else{
+            char text[50];
+            std::sprintf(text, "OK", IMG_COUNT, camera.frame_calib.size());
+            cv::putText(frame, text, cv::Point(0,60)
+                , cv::FONT_HERSHEY_SIMPLEX, 2, cv::Scalar(0,255,0), 6);
+        }
 
         cv::imshow("cam", frame);
 
@@ -112,6 +120,8 @@ int calibration_main()
         }
 
     }
+
+    camera.image_sample_isok = 1;
 
     // 执行相机标定
     cv::calibrateCamera(camera.objectPoints, camera.imagePoints, cv::Size(camera.frame_gray.rows, camera.frame_gray.cols), 

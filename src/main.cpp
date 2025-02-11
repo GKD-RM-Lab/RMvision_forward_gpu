@@ -28,6 +28,29 @@ int findMissingCorner(const std::vector<cv::Point2f>& pts);
 void gpu_accel_check();
 
 int main(int argc, char** argv) {
+
+    //相机线程
+    std::thread cameraThread(HIKcamtask);
+
+    /*相机标定*/
+    if(argc > 1)
+    {
+        std::string command_str;
+        command_str = argv[1];    
+        std::cout << command_str << std::endl;
+        if(command_str == "--calibration")
+        {
+            //相机标定
+            std::cout << "into camera calibration ....." << std::endl;
+            calibration_main();
+            return 0;
+        }else{
+            std::cout << "usage: " << std::endl;
+            std::cout << "--calibration -> to calibrate camera" << std::endl;
+        }
+    }
+
+
     gpu_accel_check();
 
     //启用opencl
@@ -62,12 +85,6 @@ int main(int argc, char** argv) {
 
     Timer timer, timer2;
     timer2.begin();
-
-    //相机线程
-    std::thread cameraThread(HIKcamtask);
-
-    calibration_main();
-    return 0;
 
     while(1)
     {   
