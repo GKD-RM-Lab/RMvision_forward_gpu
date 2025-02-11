@@ -19,6 +19,7 @@ void writeCameraParametersToJson(const cv::Mat& cameraMatrix, const cv::Mat& dis
 void readCameraParametersFromYaml(const std::string& filename, cv::Mat& cameraMatrix, cv::Mat& distCoeffs);
 int calibration_main();
 long int get_sysetm_time_ms();
+cv::Mat rect_cut(cv::Mat image);
 
 
 /*************** calibration settings ****************/
@@ -39,6 +40,8 @@ int visulization_task()
         if(frame.empty()) continue;
         if(cv::waitKey(1) == 'q') break;
         
+        frame = rect_cut(frame);
+
         if(get_sysetm_time_ms() - camera.plate_lasttime < 10)
         {
             cv::drawChessboardCorners(frame, boardSize, camera.corners, true);
@@ -91,6 +94,8 @@ int calibration_main()
         HIKframemtx.unlock();
         if(camera.frame.empty()) continue;
         
+        camera.frame = rect_cut(camera.frame);
+
         //检测棋盘格角点
         cv::cvtColor(camera.frame, camera.frame_gray, cv::COLOR_BGR2GRAY);
         if(!cv::findChessboardCorners(camera.frame_gray, boardSize, camera.corners)){
@@ -162,3 +167,21 @@ long int get_sysetm_time_ms()
     return static_cast<long int>(duration.count());
 }
 
+cv::Mat rect_cut(cv::Mat image)
+{
+    // 原始尺寸
+    int width = image.cols;   // 1440
+    [[maybe_unused]] int height = image.rows;  // 1080
+
+    // 计算裁剪区域 (居中裁剪1080x1080)
+    int cropSize = image.rows;
+    int x = (width - cropSize) / 2;  // 计算左上角x坐标
+    int y = 0;                       // 由于高度本身就是1080，无需调整
+
+    // 定义裁剪矩形
+    cv::Rect roi(x, y, cropSize, cropSize);
+
+    // 进行裁剪
+    cv::Mat croppedImage = image(roi).clone(); 
+    return croppedImage;
+}

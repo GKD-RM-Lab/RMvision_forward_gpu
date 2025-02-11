@@ -25,7 +25,6 @@
 std::string label2string(int num);
 cv::Mat visual_label(cv::Mat inputImage, std::vector<yolo_kpt::Object> result);
 void removePointsOutOfRect(std::vector<cv::Point2f>& kpt, const cv::Rect2f& rect);
-cv::Mat rect_cut(cv::Mat image);
 int findMissingCorner(const std::vector<cv::Point2f>& pts);
 
 void gpu_accel_check();
@@ -187,25 +186,6 @@ int findMissingCorner(const std::vector<cv::Point2f>& trianglePoints)
     }
 }
 
-cv::Mat rect_cut(cv::Mat image)
-{
-    // 原始尺寸
-    int width = image.cols;   // 1440
-    [[maybe_unused]] int height = image.rows;  // 1080
-
-    // 计算裁剪区域 (居中裁剪1080x1080)
-    int cropSize = image.rows;
-    int x = (width - cropSize) / 2;  // 计算左上角x坐标
-    int y = 0;                       // 由于高度本身就是1080，无需调整
-
-    // 定义裁剪矩形
-    cv::Rect roi(x, y, cropSize, cropSize);
-
-    // 进行裁剪
-    cv::Mat croppedImage = image(roi).clone(); 
-    return croppedImage;
-}
-
 //label -> 标签字符串
 std::string label2string(int num) {
     std::vector<std::string> class_names = {
@@ -250,7 +230,7 @@ cv::Mat visual_label(cv::Mat inputImage, std::vector<yolo_kpt::Object> result)
                     char text[50];
                     std::cout << result[j].pnp_tvec << std::endl;
                     std::sprintf(text, "x%.2fy%.2fz%.2f", result[j].pnp_tvec.at<double>(0)
-                    , result[j].pnp_tvec.at<double>(2), result[j].pnp_tvec.at<double>(2));
+                    , result[j].pnp_tvec.at<double>(1), result[j].pnp_tvec.at<double>(2));
                     cv::putText(inputImage, text, cv::Point(result[j].kpt[3].x + 10, result[j].kpt[3].y + 30)
                     , cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0,0,255), 3);
                 }
@@ -271,7 +251,7 @@ cv::Mat visual_label(cv::Mat inputImage, std::vector<yolo_kpt::Object> result)
                     char text[50];
                     std::cout << result[j].pnp_tvec << std::endl;
                     std::sprintf(text, "x%.2fy%.2fz%.2f", result[j].pnp_tvec.at<double>(0)
-                    , result[j].pnp_tvec.at<double>(2), result[j].pnp_tvec.at<double>(2));
+                    , result[j].pnp_tvec.at<double>(1), result[j].pnp_tvec.at<double>(2));
                     cv::putText(inputImage, text, cv::Point(result[j].kpt[2].x + 10, result[j].kpt[2].y + 30)
                     , cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0,0,255), 3);
                 }

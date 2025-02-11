@@ -16,9 +16,9 @@
 
 typedef struct
 {
-    cv::UMat frame;
-    cv::UMat frame_gray;
-    std::vector<cv::UMat> frame_calib;
+    cv::Mat frame;
+    cv::Mat frame_gray;
+    std::vector<cv::Mat> frame_calib;
     cv::VideoCapture cam;
     int sample_period_count = 0;
     int cam_id = 0;             //相机ID
@@ -109,5 +109,5 @@ public:
 
 
 extern int calibration_main();
-
+extern cv::Mat rect_cut(cv::Mat image);
 #endif
