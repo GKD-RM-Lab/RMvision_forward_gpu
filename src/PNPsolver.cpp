@@ -1,26 +1,72 @@
 #include "PNPsolver.hpp"
 
-int pnp_solver::calculate(std::vector<cv::Point> imagePoints_cv, cv::OutputArray rvec, cv::OutputArray tvec)
+//pnp求解全部装甲板
+int pnp_solver::calculate_all(std::vector<yolo_kpt::Object> &armors)
 {
-    //cv::point -> cv::point2f
-    std::vector<cv::Point2f> imagePoints;
-    for (const auto& p : imagePoints_cv) {
-        imagePoints.emplace_back(p.x, p.y);
+    for(int i=0; i < armors.size(); i++){
+        calculate_single(armors[i]);
     }
-    return cv::solvePnP(objectPoints, imagePoints, cameraMatrix, distCoeffs, rvec, tvec);
+    return 0;
 }
 
-pnp_solver::pnp_solver(cv::Mat mtx, cv::Mat dist)
+//pnp求解单个装甲板
+int pnp_solver::calculate_single(yolo_kpt::Object &armor)
 {
+    if(armor.pnp_is_calculated == -1) return -1;
+    if(armor.kpt.size() == 4)
+    {
+        cv::solvePnP(object_4Points, armor.kpt
+            , cameraMatrix, distCoeffs, armor.pnp_rvec, armor.pnp_tvec);
+        armor.pnp_is_calculated = 1;
+        return 0;
+    }
+    if(armor.kpt.size() == 3)
+    {
+        cv::solvePnP(object_3Points[armor.kpt_lost_index], armor.kpt,
+            cameraMatrix, distCoeffs, armor.pnp_rvec, armor.pnp_tvec,
+            false, cv::SOLVEPNP_SQPNP);
+        armor.pnp_is_calculated = 1;
+        return 0;
+    }
+
+    return -1;
+}
+
+pnp_solver::pnp_solver(const std::string& filename)
+{
+    //装甲板参数
+    float armor_width = 135;
+    float light_height = 50;
+
     //初始化物体坐标系
-    objectPoints = {
-        {0,             0,              0},       
-        {0,             squareSize,     0},       
-        {squareSize,    squareSize,     0},       
-        {squareSize,    0,              0}        
+    std::vector<cv::Point3f> object_all = {
+        {armor_width/2,             light_height/2,              0},       //0-左上
+        {armor_width/2,             -light_height/2,             0},       //1-左下
+        {-armor_width/2,            -light_height/2,             0},       //2-右下
+        {-armor_width/2,            light_height/2,              0}        //3-右上
     };
-    cameraMatrix = mtx;
-    distCoeffs = dist;
+
+    object_4Points = object_all;
+    for(int i=0; i<4; i++)
+    {
+        object_3Points.push_back(object_all);
+        object_3Points[i].erase(object_3Points[i].begin() + i);
+    }
+    //debug
+    // std::cout << object_4Points << std::endl;
+    // std::cout << object_3Points[0] << std::endl;
+    // std::cout << object_3Points[1] << std::endl;
+
+    readCameraParametersFromYaml(filename);
+
+}
+
+// 从YAML文件读取cameraMatrix和distCoeffs
+void pnp_solver::readCameraParametersFromYaml(const std::string& filename) {
+
+    cv::FileStorage fs(filename, cv::FileStorage::READ);
+    fs["camera_matrix"] >> cameraMatrix;
+    fs["distortion_coefficients"] >> distCoeffs;
 }
 
 pnp_solver::~pnp_solver()

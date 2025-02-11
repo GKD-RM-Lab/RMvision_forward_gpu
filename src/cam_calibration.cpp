@@ -16,7 +16,7 @@ camera_cali_type camera;
 //json
 using json = nlohmann::json;
 void writeCameraParametersToJson(const cv::Mat& cameraMatrix, const cv::Mat& distCoeffs, const std::string& filename);
-void readCameraParametersFromJson(const std::string& filename, cv::Mat& cameraMatrix, cv::Mat& distCoeffs);
+void readCameraParametersFromYaml(const std::string& filename, cv::Mat& cameraMatrix, cv::Mat& distCoeffs);
 int calibration_main();
 long int get_sysetm_time_ms();
 
@@ -147,7 +147,7 @@ void writeCameraParametersToJson(const cv::Mat& cameraMatrix, const cv::Mat& dis
 
 
 // 从YAML文件读取cameraMatrix和distCoeffs
-void readCameraParametersFromJson(const std::string& filename, cv::Mat& cameraMatrix, cv::Mat& distCoeffs) {
+void readCameraParametersFromYaml(const std::string& filename, cv::Mat& cameraMatrix, cv::Mat& distCoeffs) {
 
     cv::FileStorage fs(filename, cv::FileStorage::READ);
     fs["camera_matrix"] >> cameraMatrix;
@@ -161,3 +161,4 @@ long int get_sysetm_time_ms()
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch());
     return static_cast<long int>(duration.count());
 }
+

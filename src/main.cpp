@@ -14,6 +14,9 @@
 //cam calib
 #include "cam_calibration.hpp"
 
+//pnpsolver
+#include "PNPsolver.hpp"
+
 //openvino
 #include <openvino/openvino.hpp>
 
@@ -29,8 +32,9 @@ void gpu_accel_check();
 
 int main(int argc, char** argv) {
 
-    //相机线程
+    /*相机读取线程*/
     std::thread cameraThread(HIKcamtask);
+    cv::Mat inputImage;
 
     /*相机标定*/
     if(argc > 1)
@@ -51,46 +55,30 @@ int main(int argc, char** argv) {
     }
 
 
-    gpu_accel_check();
-
+    
     //启用opencl
     cv::ocl::setUseOpenCL(true);
+    gpu_accel_check();
 
-    cv::Mat inputImage; // = cv::Mat::zeros(INPUT_HEIGHT, INPUT_WIDTH, CV_8UC3);
-    inputImage = cv::imread("../videos/R3_test.jpg");
-
-
-    /*犀浦模型*/
+    /*推理模型*/
     yolo_kpt model;
     std::vector<yolo_kpt::Object> result;
 
-    //推理
-    result = model.work(inputImage);
-    inputImage = visual_label(inputImage, result);
-    //输出信息&绘图
-
-
-
-    /*视频处理：*/
-
-    //视频读取
-    cv::VideoCapture video("../videos/full-test-1.mp4");
-
-    //视频写入
-    cv::VideoWriter writer("../videos/debug_autoaim_label.avi"
-            , cv::VideoWriter::fourcc('M', 'J', 'P', 'G')
-            , 30
-            , cv::Size(1280, 720));
-
-
+    /*计时器*/
     Timer timer, timer2;
     timer2.begin();
+
+    /*PNP求解器*/
+    pnp_solver pnp("../config/camera_paramets.yaml");
+    std::cout << "camera intrinsics is loaded to :" << std::endl;
+    std::cout << "cameraMatrix:" << std::endl;
+    std::cout << pnp.cameraMatrix << std::endl;
+    std::cout << "distCoeffs:" << std::endl;
+    std::cout << pnp.distCoeffs << std::endl;
 
     while(1)
     {   
         //读取视频帧
-        // video.read(inputImage);
-        // if(inputImage.empty()) break;
         HIKframemtx.lock();
         HIKimage.copyTo(inputImage);
         HIKframemtx.unlock();
@@ -98,6 +86,7 @@ int main(int argc, char** argv) {
 
         inputImage = rect_cut(inputImage);
 
+        /*识别*/
         //识别图像（前处理+推理+后处理）
         timer.begin();
         result = model.work(inputImage);
@@ -105,6 +94,43 @@ int main(int argc, char** argv) {
         std::cout << "total time:" << timer.read() << std::endl;
         std::cout << "--------------------" << std::endl;
         
+        /*PNP*/
+        //角点预处理
+        for(size_t j=0; j<result.size(); j++)
+        {
+            //剔除无效点
+            removePointsOutOfRect(result[j].kpt, result[j].rect);
+
+            //四点都有=有解
+            if(result[j].kpt.size() == 4)
+            {
+                result[j].pnp_is_calculated = 0;
+            }
+
+            //四缺一的情况下，确定缺了哪个角点
+            if(result[j].kpt.size() == 3)
+            {
+                result[j].kpt_lost_index = findMissingCorner(result[j].kpt);
+                result[j].pnp_is_calculated = 0;
+            }
+            
+            //有效角点小于三判定pnp无解
+            if(result[j].kpt.size() < 3)
+            {
+                result[j].pnp_is_calculated = -1;   
+            }
+
+        }
+
+        //pnp求解
+        pnp.calculate_all(result);
+
+        // //debug
+        // if(result.size() > 0){
+        //     std::cout << result[0].pnp_tvec << std::endl;
+        // }
+
+
         //fps
         char text[50];
         std::sprintf(text, "%.2fps, %.2fms", 1000/inf_time, inf_time);
@@ -120,22 +146,7 @@ int main(int argc, char** argv) {
         std::cout << "display->" << 1000/timer2.read() << "fps" << std::endl;
         timer2.begin();
 
-
-        //写入带标签的图片到视频
-        // if(inputImage.empty()) break;
-        // writer.write(inputImage);
-
-
     }
-
-    video.release();
-    writer.release();
-
-    // cv::imwrite("../videos/debug_labled_image.jpg", inputImage);
-    // -------------------------------------------
-
-
-
     return 0;
 }
 
@@ -210,9 +221,6 @@ cv::Mat visual_label(cv::Mat inputImage, std::vector<yolo_kpt::Object> result)
     {
         for(size_t j=0; j<result.size(); j++)
         {
-            //剔除无效点
-            removePointsOutOfRect(result[j].kpt, result[j].rect);
-
             //画出所有有效点
             for(size_t i=0; i<result[j].kpt.size(); i++)
             {
@@ -222,9 +230,6 @@ cv::Mat visual_label(cv::Mat inputImage, std::vector<yolo_kpt::Object> result)
                 cv::putText(inputImage, text, cv::Point(result[j].kpt[i].x, result[j].kpt[i].y)
                 , cv::FONT_HERSHEY_SIMPLEX, 1.2, cv::Scalar(0,0,255), 2);
             }
-
-            //文字
-
 
             //判定框
             cv::rectangle(inputImage, result[j].rect, cv::Scalar(255,0,0), 5);
@@ -239,6 +244,16 @@ cv::Mat visual_label(cv::Mat inputImage, std::vector<yolo_kpt::Object> result)
                 std::sprintf(text, "%s - P%.2f", label2string(result[j].label).c_str(), result[j].prob);
                 cv::putText(inputImage, text, cv::Point(result[j].kpt[3].x, result[j].kpt[3].y)
                 , cv::FONT_HERSHEY_SIMPLEX, 1.2, cv::Scalar(0,0,255), 3);
+                //pnp结果
+                if(result[j].pnp_is_calculated == 1)
+                {
+                    char text[50];
+                    std::cout << result[j].pnp_tvec << std::endl;
+                    std::sprintf(text, "x%.2fy%.2fz%.2f", result[j].pnp_tvec.at<double>(0)
+                    , result[j].pnp_tvec.at<double>(2), result[j].pnp_tvec.at<double>(2));
+                    cv::putText(inputImage, text, cv::Point(result[j].kpt[3].x + 10, result[j].kpt[3].y + 30)
+                    , cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0,0,255), 3);
+                }
             }
 
             if(result[j].kpt.size() == 3)
@@ -247,10 +262,22 @@ cv::Mat visual_label(cv::Mat inputImage, std::vector<yolo_kpt::Object> result)
                 cv::line(inputImage, result[j].kpt[1], result[j].kpt[2], cv::Scalar(0,255,0), 5);
                 cv::line(inputImage, result[j].kpt[2], result[j].kpt[0], cv::Scalar(0,255,0), 5);
                 char text[50];
-                std::sprintf(text, "%s - %d", label2string(result[j].label).c_str(), findMissingCorner(result[j].kpt));
+                std::sprintf(text, "%s - %d", label2string(result[j].label).c_str(), result[j].kpt_lost_index);
                 cv::putText(inputImage, text, cv::Point(result[j].kpt[2].x, result[j].kpt[2].y)
                 , cv::FONT_HERSHEY_SIMPLEX, 1.2, cv::Scalar(0,0,255), 3);
+                //pnp结果
+                if(result[j].pnp_is_calculated == 1)
+                {
+                    char text[50];
+                    std::cout << result[j].pnp_tvec << std::endl;
+                    std::sprintf(text, "x%.2fy%.2fz%.2f", result[j].pnp_tvec.at<double>(0)
+                    , result[j].pnp_tvec.at<double>(2), result[j].pnp_tvec.at<double>(2));
+                    cv::putText(inputImage, text, cv::Point(result[j].kpt[2].x + 10, result[j].kpt[2].y + 30)
+                    , cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0,0,255), 3);
+                }
             }
+
+
 
         }
     }

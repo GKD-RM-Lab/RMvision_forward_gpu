@@ -50,10 +50,16 @@ public:
     yolo_kpt();
 
     struct Object {
+        /*图像识别数据*/
         cv::Rect_<float> rect;
         int label;
         float prob;
         std::vector<cv::Point2f>kpt;
+        /*pnp数据*/
+        int pnp_is_calculated = 0;  //-1无解，0未计算，1计算完成
+        int kpt_lost_index = -1;    //角点缺失索引，0-左上，1-左下，2-右下，3-右上
+        cv::Mat pnp_tvec;
+        cv::Mat pnp_rvec;
     };
     cv::Mat letter_box(cv::Mat &src, int h, int w, std::vector<float> &padd);
 
