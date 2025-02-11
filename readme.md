@@ -4,6 +4,19 @@
 - ~~PNP解算~~
     - 区分大/小装甲板
 - 把需要配置的参数提取出来放到一个yaml文件里
+    - 推理参数
+        - model_path
+        - conf_threshold
+        - rect_cut
+    - 标定参数
+        - boardSize
+        - squareSize
+        - IMG_COUNT
+        - SAMPLE_PERIOD
+        - yaml path
+    - 其他
+        - imshow_en（是否显示调试画面）
+        - debug info
 
 ## 模型存在的问题
 - 训练时没开旋转增强，装甲板跟相机转角过大就不能识别了

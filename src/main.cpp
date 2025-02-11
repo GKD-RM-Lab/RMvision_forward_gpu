@@ -257,8 +257,6 @@ cv::Mat visual_label(cv::Mat inputImage, std::vector<yolo_kpt::Object> result)
                 }
             }
 
-
-
         }
     }
     return inputImage;
