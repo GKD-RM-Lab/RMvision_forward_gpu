@@ -58,7 +58,7 @@ int HIKcamtask()
         }
         if (stDeviceList.nDeviceNum > 0)
         {
-            for (int i = 0; i < stDeviceList.nDeviceNum; i++)
+            for (unsigned int i = 0; i < stDeviceList.nDeviceNum; i++)
             {
                 printf("[device %d]:\n", i);
                 MV_CC_DEVICE_INFO* pDeviceInfo = stDeviceList.pDeviceInfo[i];
@@ -221,8 +221,8 @@ int HIKcamtask()
                     if (keyCode == 27) {
                         break;
                     }
-                    cv::destroyWindow;
-                    cv::destroyAllWindows;
+                    // cv::destroyWindow;
+                    // cv::destroyAllWindows;
                 }
 
             }

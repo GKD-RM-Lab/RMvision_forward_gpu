@@ -72,7 +72,7 @@ void yolo_kpt::drawPred(int classId, float conf, cv::Rect box, std::vector<cv::P
 
     cv::Point2f keypoints_center(0, 0);
     std::vector<bool> valid_keypoints(5, false);
-    for (int i = 0; i < point.size(); i++) {
+    for (std::vector<cv::Point_<float>>::size_type i = 0; i < point.size(); i++) {
         if (i != 2 && point[i].x != 0 && point[i].y != 0) {
             valid_keypoints[i] = true;
         }
@@ -98,10 +98,14 @@ void yolo_kpt::drawPred(int classId, float conf, cv::Rect box, std::vector<cv::P
 
     for (int i = 0; i < KPT_NUM; i++)
         if (DETECT_MODE == 1)
-            if (i == 2)
+        {
+            if (i == 2){
                 cv::circle(frame, point[i], 4, cv::Scalar(163, 164, 163), 4);
-            else
+            }
+            else{
                 cv::circle(frame, point[i], 3, cv::Scalar(0, 255, 0), 3);
+            }
+        }
 
 
     std::string label = cv::format("%.2f", conf);
@@ -148,7 +152,7 @@ void yolo_kpt::generate_proposals(int stride, const float *feat, std::vector<Obj
                 box_prob = sigmoid(box_prob);
                 if (box_prob < CONF_THRESHOLD) continue; // 删除置信度低的bbox
 
-                float kptx[5], kpty[5], kptp[5];
+                [[maybe_unused]] float kptx[5], kpty[5], kptp[5];
                 // xi,yi,pi 是每个关键点的xy坐标和置信度,最新的代码用不到pi,但是用户可以根据自己需求添加
                 float x = feat[anchor * feat_h * feat_w * (5 + CLS_NUM + KPT_NUM * 3) +
                                i * feat_w * (5 + CLS_NUM + KPT_NUM * 3) +
@@ -210,14 +214,17 @@ void yolo_kpt::generate_proposals(int stride, const float *feat, std::vector<Obj
                 obj.rect.height = h;
                 obj.label = idx - 5;
                 obj.prob = cof;
-                if (KPT_NUM != 0)
-                    for (int k = 0; k < KPT_NUM; k++)
-                        if (k != 2 && kptx[k] > r_x && kptx[k] < r_x + w && kpty[k] > r_y && kpty[k] < r_y + h)
+                if (KPT_NUM != 0) {
+                    for (std::vector<cv::Point_<float>>::size_type k = 0; k < KPT_NUM; k++) {
+                        if (k != 2 && kptx[k] > r_x && kptx[k] < r_x + w && kpty[k] > r_y && kpty[k] < r_y + h) {
                             obj.kpt.push_back(cv::Point2f(kptx[k], kpty[k]));
-                        else if (k == 2)
+                        } else if (k == 2) {
                             obj.kpt.push_back(cv::Point2f(kptx[k], kpty[k]));
-                        else
+                        } else {
                             obj.kpt.push_back(cv::Point2f(0, 0));
+                        }
+                    }
+                }
                 objects.push_back(obj);
             }
         }

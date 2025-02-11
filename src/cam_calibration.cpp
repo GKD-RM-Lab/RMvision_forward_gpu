@@ -48,12 +48,12 @@ int visulization_task()
         if(camera.image_sample_isok == 0)
         {
             char text[50];
-            std::sprintf(text, "image:%d/%d", IMG_COUNT, camera.frame_calib.size());
+            std::sprintf(text, "image:%d/%ld", IMG_COUNT, camera.frame_calib.size());
             cv::putText(frame, text, cv::Point(0,30)
                 , cv::FONT_HERSHEY_SIMPLEX, 1.2, cv::Scalar(0,0,255), 3);
         }else{
             char text[50];
-            std::sprintf(text, "OK", IMG_COUNT, camera.frame_calib.size());
+            std::sprintf(text, "OK");
             cv::putText(frame, text, cv::Point(0,60)
                 , cv::FONT_HERSHEY_SIMPLEX, 2, cv::Scalar(0,255,0), 6);
         }

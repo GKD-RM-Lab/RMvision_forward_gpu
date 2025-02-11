@@ -180,7 +180,7 @@ cv::Mat rect_cut(cv::Mat image)
 {
     // 原始尺寸
     int width = image.cols;   // 1440
-    int height = image.rows;  // 1080
+    [[maybe_unused]] int height = image.rows;  // 1080
 
     // 计算裁剪区域 (居中裁剪1080x1080)
     int cropSize = image.rows;
@@ -208,17 +208,17 @@ cv::Mat visual_label(cv::Mat inputImage, std::vector<yolo_kpt::Object> result)
 {
     if(result.size() > 0)
     {
-        for(int j=0; j<result.size(); j++)
+        for(size_t j=0; j<result.size(); j++)
         {
             //剔除无效点
             removePointsOutOfRect(result[j].kpt, result[j].rect);
 
             //画出所有有效点
-            for(int i=0; i<result[j].kpt.size(); i++)
+            for(size_t i=0; i<result[j].kpt.size(); i++)
             {
                 cv::circle(inputImage, result[j].kpt[i], 3, cv::Scalar(0,255,0), 3);
                 char text[10];
-                std::sprintf(text, "%d", i);
+                std::sprintf(text, "%ld", i);
                 cv::putText(inputImage, text, cv::Point(result[j].kpt[i].x, result[j].kpt[i].y)
                 , cv::FONT_HERSHEY_SIMPLEX, 1.2, cv::Scalar(0,0,255), 2);
             }
