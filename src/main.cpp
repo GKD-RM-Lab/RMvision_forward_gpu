@@ -22,10 +22,6 @@
 
 #include <thread>
 
-std::string label2string(int num);
-cv::Mat visual_label(cv::Mat inputImage, std::vector<yolo_kpt::Object> result);
-void removePointsOutOfRect(std::vector<cv::Point2f>& kpt, const cv::Rect2f& rect);
-int findMissingCorner(const std::vector<cv::Point2f>& pts);
 
 void gpu_accel_check();
 
@@ -34,6 +30,8 @@ int main(int argc, char** argv) {
     /*相机读取线程*/
     std::thread cameraThread(HIKcamtask);
     cv::Mat inputImage;
+
+    float total_time;   //debug 每识别周期时间
 
     /*相机标定*/
     if(argc > 1)
@@ -95,187 +93,31 @@ int main(int argc, char** argv) {
         
         /*PNP*/
         //角点预处理
-        for(size_t j=0; j<result.size(); j++)
-        {
-            //剔除无效点
-            removePointsOutOfRect(result[j].kpt, result[j].rect);
-
-            //四点都有=有解
-            if(result[j].kpt.size() == 4)
-            {
-                result[j].pnp_is_calculated = 0;
-            }
-
-            //四缺一的情况下，确定缺了哪个角点
-            if(result[j].kpt.size() == 3)
-            {
-                result[j].kpt_lost_index = findMissingCorner(result[j].kpt);
-                result[j].pnp_is_calculated = 0;
-            }
-            
-            //有效角点小于三判定pnp无解
-            if(result[j].kpt.size() < 3)
-            {
-                result[j].pnp_is_calculated = -1;   
-            }
-
-        }
+        model.pnp_kpt_preprocess(result);
 
         //pnp求解
         pnp.calculate_all(result);
 
-        // //debug
-        // if(result.size() > 0){
-        //     std::cout << result[0].pnp_tvec << std::endl;
-        // }
-
-
         //fps
         char text[50];
-        std::sprintf(text, "%.2fps, %.2fms", 1000/inf_time, inf_time);
+        std::sprintf(text, "%.2fps, %.2fms", 1000/total_time, total_time);
         cv::putText(inputImage, text, cv::Point(0,30)
             , cv::FONT_HERSHEY_SIMPLEX, 1.2, cv::Scalar(0,255,0), 3);
         
-        //输出信息&绘图
-        inputImage = visual_label(inputImage, result);
+        //输出识别信息&绘图
+        inputImage = model.visual_label(inputImage, result);
         cv::imshow("label", inputImage);
         if(cv::waitKey(1) == 'q') break;
 
         timer2.end();
         std::cout << "display->" << 1000/timer2.read() << "fps" << std::endl;
+        total_time = (float)timer2.read();
         timer2.begin();
-
     }
     return 0;
 }
 
-//角点四缺一时候，用来判断缺了哪一个角点
-//返回值：0-左上，1-左下，2-右下，3-右上
-//模型返回角点的顺序：左上->左下->右下->右上
-int findMissingCorner(const std::vector<cv::Point2f>& trianglePoints)
-{
-    if (trianglePoints.size() != 3)
-        return -1;  
 
-    // 计算三条边长度
-    double d01 = cv::norm(trianglePoints[0] - trianglePoints[1]);
-    double d12 = cv::norm(trianglePoints[1] - trianglePoints[2]);
-    double d20 = cv::norm(trianglePoints[2] - trianglePoints[0]);
-
-    // 找出最长的边
-    int gapIndex = 0;
-    double maxGap = d01;
-    if (d12 > maxGap) { maxGap = d12; gapIndex = 1; }
-    if (d20 > maxGap) { maxGap = d20; gapIndex = 2; }
-
-    // 判断缺失角
-    if (gapIndex == 0)
-    {
-        return 1;
-    }
-    else if (gapIndex == 1)
-    {
-        return 2;
-    }
-    else  
-    {
-        if (d01 < d12)
-            return 3;
-        else
-            return 0;
-    }
-}
-
-//label -> 标签字符串
-std::string label2string(int num) {
-    std::vector<std::string> class_names = {
-        "B1", "B2", "B3", "B4", "B5", "BO", "BS", "R1", "R2", "R3", "R4", "R5", "RO", "RS"
-    };
-    return class_names[num];
-}
-
-//可视化results
-cv::Mat visual_label(cv::Mat inputImage, std::vector<yolo_kpt::Object> result)
-{
-    if(result.size() > 0)
-    {
-        for(size_t j=0; j<result.size(); j++)
-        {
-            //画出所有有效点
-            for(size_t i=0; i<result[j].kpt.size(); i++)
-            {
-                cv::circle(inputImage, result[j].kpt[i], 3, cv::Scalar(0,255,0), 3);
-                char text[10];
-                std::sprintf(text, "%ld", i);
-                cv::putText(inputImage, text, cv::Point(result[j].kpt[i].x, result[j].kpt[i].y)
-                , cv::FONT_HERSHEY_SIMPLEX, 1.2, cv::Scalar(0,0,255), 2);
-            }
-
-            //判定框
-            cv::rectangle(inputImage, result[j].rect, cv::Scalar(255,0,0), 5);
-
-            if(result[j].kpt.size() == 4)
-            {
-                cv::line(inputImage, result[j].kpt[0], result[j].kpt[1], cv::Scalar(0,255,0), 5);
-                cv::line(inputImage, result[j].kpt[1], result[j].kpt[2], cv::Scalar(0,255,0), 5);
-                cv::line(inputImage, result[j].kpt[2], result[j].kpt[3], cv::Scalar(0,255,0), 5);
-                cv::line(inputImage, result[j].kpt[3], result[j].kpt[0], cv::Scalar(0,255,0), 5);
-                char text[50];
-                std::sprintf(text, "%s - P%.2f", label2string(result[j].label).c_str(), result[j].prob);
-                cv::putText(inputImage, text, cv::Point(result[j].kpt[3].x, result[j].kpt[3].y)
-                , cv::FONT_HERSHEY_SIMPLEX, 1.2, cv::Scalar(0,0,255), 3);
-                //pnp结果
-                if(result[j].pnp_is_calculated == 1)
-                {
-                    char text[50];
-                    std::cout << result[j].pnp_tvec << std::endl;
-                    std::sprintf(text, "x%.2fy%.2fz%.2f", result[j].pnp_tvec.at<double>(0)
-                    , result[j].pnp_tvec.at<double>(1), result[j].pnp_tvec.at<double>(2));
-                    cv::putText(inputImage, text, cv::Point(result[j].kpt[3].x + 10, result[j].kpt[3].y + 30)
-                    , cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0,255,255), 3);
-                }
-            }
-
-            if(result[j].kpt.size() == 3)
-            {
-                cv::line(inputImage, result[j].kpt[0], result[j].kpt[1], cv::Scalar(0,255,0), 5);
-                cv::line(inputImage, result[j].kpt[1], result[j].kpt[2], cv::Scalar(0,255,0), 5);
-                cv::line(inputImage, result[j].kpt[2], result[j].kpt[0], cv::Scalar(0,255,0), 5);
-                char text[50];
-                std::sprintf(text, "%s - %d", label2string(result[j].label).c_str(), result[j].kpt_lost_index);
-                cv::putText(inputImage, text, cv::Point(result[j].kpt[2].x, result[j].kpt[2].y)
-                , cv::FONT_HERSHEY_SIMPLEX, 1.2, cv::Scalar(0,0,255), 3);
-                //pnp结果
-                if(result[j].pnp_is_calculated == 1)
-                {
-                    char text[50];
-                    std::cout << result[j].pnp_tvec << std::endl;
-                    std::sprintf(text, "x%.2fy%.2fz%.2f", result[j].pnp_tvec.at<double>(0)
-                    , result[j].pnp_tvec.at<double>(1), result[j].pnp_tvec.at<double>(2));
-                    cv::putText(inputImage, text, cv::Point(result[j].kpt[2].x + 10, result[j].kpt[2].y + 30)
-                    , cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0,255,255), 3);
-                }
-            }
-
-        }
-    }
-    return inputImage;
-}
-
-/*剔除不在判定框中的特征点*/
-void removePointsOutOfRect(std::vector<cv::Point2f>& kpt, const cv::Rect2f& rect)
-{
-    // 使用 remove_if + erase 在原地剔除不在矩形内的点
-    kpt.erase(
-        std::remove_if(kpt.begin(), kpt.end(),
-            [&rect](const cv::Point2f& p) {
-                // 若点不在矩形内，返回 true 表示要被移除
-                return !rect.contains(p);
-            }
-        ),
-        kpt.end()
-    );
-}
 
 void gpu_accel_check()
 {

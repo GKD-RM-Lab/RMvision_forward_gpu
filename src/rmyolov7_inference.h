@@ -75,6 +75,13 @@ public:
 
     std::vector<Object> work(cv::Mat src_img);
 
+    /*----新增函数----*/
+    std::string label2string(int num);
+    cv::Mat visual_label(cv::Mat inputImage, std::vector<yolo_kpt::Object> result);
+    void removePointsOutOfRect(std::vector<cv::Point2f>& kpt, const cv::Rect2f& rect);
+    int findMissingCorner(const std::vector<cv::Point2f>& pts);
+    int pnp_kpt_preprocess(std::vector<yolo_kpt::Object> result);
+
 private:
     ov::Core core;
     std::shared_ptr<ov::Model> model;
@@ -100,7 +107,5 @@ private:
     }
 
 };
-
-extern float inf_time;
 
 #endif //GMASTER_CV_2023_ARMORNEWYOLO_H
