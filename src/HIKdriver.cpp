@@ -172,6 +172,9 @@ int HIKcamtask()
         MV_CC_SetGain(handle, params.cam_gain);
         MV_CC_SetExposureTime(handle, params.cam_exptime);
         MV_CC_SetFrameRate(handle, params.framerate);
+        // MV_CC_SetGain(handle, 15.2);
+        // MV_CC_SetExposureTime(handle, 6000);
+        // MV_CC_SetFrameRate(handle, 120);
         while(1){
     
             nRet = MV_CC_GetOneFrameTimeout(handle, pData, nDataSize, &stImageInfo, 1000);

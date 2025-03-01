@@ -66,23 +66,22 @@ pnp_solver::pnp_solver(const std::string& filename)
     float light_height_s = params.armor_small_h;     //高
 
     //装甲板参数(大装甲板)
-    float armor_width_l = params.armor_large_h;      //宽
+    float armor_width_l = params.armor_large_w;      //宽
     float light_height_l = params.armor_large_h;     //高
-    
 
     //初始化物体坐标系
     std::vector<cv::Point3f> object_all_s = {
-        {light_height_s/2,             armor_width_s/2,              0},       //0-左上
-        {light_height_s/2,             -armor_width_s/2,             0},       //1-左下
-        {-light_height_s/2,            -armor_width_s/2,             0},       //2-右下
-        {-light_height_s/2,            armor_width_s/2,              0}        //3-右上
+        {armor_width_s/2,             light_height_s/2,              0},       //0-左上
+        {armor_width_s/2,             -light_height_s/2,             0},       //1-左下
+        {-armor_width_s/2,            -light_height_s/2,             0},       //2-右下
+        {-armor_width_s/2,            light_height_s/2,              0}        //3-右上
     };
 
     std::vector<cv::Point3f> object_all_l = {
-        {light_height_l/2,             armor_width_l/2,              0},       //0-左上
-        {light_height_l/2,             -armor_width_l/2,             0},       //1-左下
-        {-light_height_l/2,            -armor_width_l/2,             0},       //2-右下
-        {-light_height_l/2,            armor_width_l/2,              0}        //3-右上
+        {armor_width_l/2,             light_height_l/2,              0},       //0-左上
+        {armor_width_l/2,             -light_height_l/2,             0},       //1-左下
+        {-armor_width_l/2,            -light_height_l/2,             0},       //2-右下
+        {-armor_width_l/2,            light_height_l/2,              0}        //3-右上
     };
 
 
@@ -96,9 +95,10 @@ pnp_solver::pnp_solver(const std::string& filename)
         object_3Points_l[i].erase(object_3Points_l[i].begin() + i);
     }
     //debug
-    // std::cout << object_4Points_l << std::endl;
-    // std::cout << object_3Points_l[0] << std::endl;
-    // std::cout << object_3Points_l[1] << std::endl;
+    std::cout << object_all_l << std::endl;
+    std::cout << object_4Points_s << std::endl;
+    std::cout << object_3Points_s[0] << std::endl;
+    std::cout << object_3Points_s[1] << std::endl;
 
     readCameraParametersFromYaml(filename);
 

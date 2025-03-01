@@ -86,6 +86,11 @@ int calibration_main()
     boardSize = cv::Size(params.boardSize_h, params.boardSize_w);
     squareSize = params.squareSize;
 
+    std::cout << "size:" << params.boardSize_h << "x" << params.boardSize_w << std::endl;
+    std::cout << "board size:" << params.squareSize << std::endl;
+    std::cout << "save to:" << params.calib_yaml_path << std::endl;
+
+
     IMG_COUNT = params.img_count;
     SAMPLE_PERIOD = params.sample_period;
 
@@ -153,6 +158,7 @@ int calibration_main()
                         mtx, dist, rvecs, tvecs);
 
     // 输出相机参数
+    std::cout << "save to:" << params.calib_yaml_path  << std::endl;
     writeCameraParametersToJson(mtx, dist, params.calib_yaml_path);
     std::cout << "Camera Matrix:\n" << mtx << std::endl;
     std::cout << "Distortion Coefficients:\n" << dist << std::endl;
@@ -219,8 +225,8 @@ void camrea_calibtation::init(){
     // std::cout << cam.get(cv::CAP_PROP_EXPOSURE) << std::endl;
     camrea.cam.set(cv::CAP_PROP_EXPOSURE, 100);
     camrea.cam.read(camrea.frame);
-    boardSize.height = 9;
-    boardSize.width = 7;
+    boardSize.height = params.boardSize_h;
+    boardSize.width = params.boardSize_w;
 
     // 创建棋盘格的3D点
     std::vector<cv::Point3f> objP;

@@ -80,7 +80,7 @@ int yaml_load(const std::string& filepath, parameter_loader_t& params) {
     fs["squareSize"] >> params.squareSize;
     fs["img_count"] >> params.img_count;
     fs["sample_period"] >> params.sample_period;
-    fs["calib_yaml_path"] >> params.cam_gain;
+    fs["calib_yaml_path"] >> params.calib_yaml_path;
 
     /*相机参数*/
     fs["cam_gain"] >> params.cam_gain;
