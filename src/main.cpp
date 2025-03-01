@@ -113,7 +113,9 @@ int main(int argc, char** argv) {
         
         //输出识别信息&绘图
         inputImage = model.visual_label(inputImage, result);
-        cv::imshow("label", inputImage);
+        if(params.imshow_en == 1){
+            cv::imshow("label", inputImage);
+        }    
         if(cv::waitKey(1) == 'q') break;
 
         timer2.end();

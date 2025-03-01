@@ -1,23 +1,5 @@
 ## TODO
 - 前处理&推理&后处理和socket发送 异步运行
-- ~~相机标定~~
-- ~~PNP解算~~
-    - ~~区分大/小装甲板~~
-- 把需要配置的参数提取出来放到一个yaml文件里
-    - 推理参数
-        - model_path
-        - conf_threshold
-        - rect_cut
-    - 标定参数
-        - boardSize
-        - squareSize
-        - IMG_COUNT
-        - SAMPLE_PERIOD
-        - yaml path
-    - 其他
-        - imshow_en（是否显示调试画面）
-        - debug info
-        - armor_size
 
 ## 模型存在的问题
 - 训练时没开旋转增强，装甲板跟相机转角过大就不能识别了
@@ -29,40 +11,51 @@
         - 勉强能用
 - 缺少低光情况下的训练样本，当装甲板中间的图案太暗，会导致四点标的不准
     - 需要增加数据集重练
+    - 或者增加相机曝光（可能装甲板高速移动画面会糊）
 
 ## 环境要求
 - OpenCL 3.0
 - Opencv >= 4.8 并且开启DNN和OpenCL模块
 - Openvino 2024.6.0
 
-## 目录结构
-- model
-    - 模型目录，openvino格式和onnx格式
-- src
-    - cl_inference 目前没用，旧模型使用opencl-DNN的推理代码
-    - vino_inference 目前没用，旧模型使用openvino的推理代码
-    - rmyolov7_inference 新模型的推理库
-    - timer.hpp 方便测耗时的神奇小工具
-    - main 
 
-## 需要注意的参数和其他东西
-- ./src/rmyolov7_inference.h 
-    - DETECT_MODE 必须为0（装甲板四点）
-    - CONF_THRESHOLD 置信度阈值，在有间歇性丢追或者错误识别的情况下可以调调
-    - MODEL_PATH 需要与模型文件的位置对应，模型格式是openvino的格式，可以由onnx转换得到
-    - IMG_SIZE 必须是640
-    - `std::vector<std::string> class_names` 定义lable_id -> 标定的对应关系
-- main.cpp写的有点随意，会以写死的路径从./video文件夹读输入，需要改改才能跑；里面有可视化标记数据的`visual_label`和检查opencv是否启用了gpu加速的`gpu_accel_check`
+## 参数解释
+配置文件存放在`/config`下，有`config.yaml`和`camera_paramets.yaml`两个。`camera_paramets.yaml`在标定相机的时候自动生成，`config.yaml`中的配置项如下：
+- 推理配置
+    - `model_path_xml`和`model_path_xml`：模型目录
+    - `conf_threshold`：至信度阈值
+    - `rect_cut`: 是否把相机画面裁切成正方形
+        - 不裁切也可以正常跑，但是因为yolo的输入是正方形的画面，进行letter_box resize之后会损失一些像素量
+        - **切换之后需要重新标定相机**
+- 相机标定配置
+    - `boardSize_h`,`boardSize_w`：标定板长宽
+    - `squareSize`: 标定板每个格子的宽度
+    - `img_count`：采集多张图片进行标定
+    - `sample_period`：间隔多少帧采集一张图片
+    - `calib_yaml_path`：保存相机标定参数的yaml文件的路径
+- 相机设置
+    - `cam_gain`：相机增益，类似于ISO，0~16.8，建议直接设置为最大
+    - `cam_exptime`：曝光时间
+    - `framerate`：帧率限制
+- 装甲板参数
+    - `armor_small_h`,`armor_small_w`: 小装甲板长宽（灯条）
+    - `armor_large_h`, `armor_large_w`: 大装甲板长宽（灯条）
+- debug选项
+    - `imshow_en`: 是否显示画面
+    - `debug_info`：是否显示调试log（未使用）
 
-## 输出数据格式
-- 每帧画面经过推理会得到一个`std::vector<yolo_kpt::Object>`的输出，每一项`yolo_kpt::Object`包含：
-    - `cv::Rect_<float> rect` yolo判定框
-    - `int label` 标签id
-        - 红/蓝辨别是ok的，但似乎有点分不清3/4/5号步兵
-    - `float prob` 置信度
-    - `std::vector<cv::Point2f>kpt` 灯条四点
-        - 极少数情况可能会丢一个，但三点貌似也能pnp（？
-        - 几乎全部的情况下至少有三个点
+## 输出格式
+pnp解算结果输出格式为`std::vector<yolo_kpt::Object>`，其中`yolo_kpt::Object`包含：
+- 图像识别结果
+    - `cv::Rect_<float> rect`判定框
+    - `int label` 标签
+    - `float prob`  至信度
+- PNP结果
+    - `int pnp_is_calculated`-1无解，0未计算，1计算完成
+    - `int kpt_lost_index`角点缺失索引，0-左上，1-左下，2-右下，3-右上，-1无缺失（四个角点都有）
+    - `cv::Mat pnp_tvec`平移向量（相机原点）
+    - `cv::Mat pnp_rvec`选装向量（相机原点）
+
 
 
 ## 性能测试
@@ -86,3 +79,84 @@ GPU(intel核显)占用在62%左右，cpu会把某一个核心占用到60%左右�
 
 ## 效果
 ![auto image](img/debug_labled_image.jpg)
+
+## 环境配置
+
+``` shell
+
+sudo install neofetch btop
+sudo apt install cmake git build-essential
+sudo apt install clinfo clpeak 
+
+#GPU驱动----
+#需要升级内核到6.x才能在新nuc上安装gpu驱动
+#老nuc不需要升级
+sudo apt install --install-recommends linux-generic-hwe-22.04
+
+#安装intel核显OpenCL驱动
+#参考：https://github.com/intel/compute-runtime
+mkdir neo
+cd neo
+wget https://github.com/intel/intel-graphics-compiler/releases/download/v2.5.6/intel-igc-core-2_2.5.6+18417_amd64.deb
+wget https://github.com/intel/intel-graphics-compiler/releases/download/v2.5.6/intel-igc-opencl-2_2.5.6+18417_amd64.deb
+wget https://github.com/intel/compute-runtime/releases/download/24.52.32224.5/intel-level-zero-gpu-dbgsym_1.6.32224.5_amd64.ddeb
+wget https://github.com/intel/compute-runtime/releases/download/24.52.32224.5/intel-level-zero-gpu_1.6.32224.5_amd64.deb
+wget https://github.com/intel/compute-runtime/releases/download/24.52.32224.5/intel-opencl-icd-dbgsym_24.52.32224.5_amd64.ddeb
+wget https://github.com/intel/compute-runtime/releases/download/24.52.32224.5/intel-opencl-icd_24.52.32224.5_amd64.deb
+wget https://github.com/intel/compute-runtime/releases/download/24.52.32224.5/libigdgmm12_22.5.5_amd64.deb
+wget https://github.com/intel/compute-runtime/releases/download/24.52.32224.5/ww52.sum
+sha256sum -c ww52.sum
+sudo dpkg -i *.deb
+sudo apt install ocl-icd-libopencl1
+sudo apt install clinfo intel_gpu_top
+
+#可以用clpeak给gpu跑分
+git clone https://github.com/krrishnarraj/clpeak
+cd clpeak
+mkdir build && cd build
+cmake ..
+make -j
+./clpeak
+
+#查看GPU占用
+sudo intel_gpu_top
+
+#OpenCV----
+#编译安装opencv4.8, 开启OpenCL支持和DNN GTK
+#满足这些配置项的opencv不在apt包里，所以要自己编译
+
+#处理依赖地狱
+sudo apt install libgtk2.0-dev libgtk-3-dev
+sudo apt-get install libeigen3-dev libgflags-dev libgoogle-glog-dev
+sudo apt-get install libtesseract-dev
+sudo apt-get install ffmpeg libavcodec-dev libavformat-dev libavutil-dev libswscale-dev
+#编译安装
+git clone -b 4.8.0 https://github.com/opencv/opencv
+git clone -b 4.8.0 https://github.com/opencv/opencv_contrib
+cd opencv
+mkdir build && cd build
+cmake -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_INSTALL_PREFIX=/usr/local \
+      -DBUILD_opencv_world=OFF \
+      -DBUILD_EXAMPLES=OFF \
+      -DBUILD_TESTS=OFF \
+      -DBUILD_DOCS=OFF \
+      -DBUILD_opencv_dnn=ON \
+      -DWITH_OPENCL=ON \
+      -DENABLE_OPENCL=ON \
+      -DWITH_TBB=ON \
+      -DWITH_EIGEN=ON \
+      -DWITH_GTK=ON \
+      -DWITH_FFMPEG=ON \
+      -DOPENCV_EXTRA_MODULES_PATH=/home/fish/opencv_contrib/modules ..
+make -j
+make install
+
+#OpenVino----
+wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
+sudo apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
+echo "deb https://apt.repos.intel.com/openvino/2024 ubuntu22 main" | sudo tee /etc/apt/sources.list.d/intel-openvino-2024.list
+sudo apt update
+sudo apt install openvino-2024.6.0
+
+```

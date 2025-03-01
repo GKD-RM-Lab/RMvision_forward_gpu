@@ -30,7 +30,7 @@ typedef struct
     int cam_exptime;        //ok
     float framerate;        //ok
     /*其他*/
-    int imshow_en;          //not used
+    int imshow_en;          //ok
     int debug_info;         //not used
     float armor_small_h;    //小装甲板高    ok
     float armor_small_w;    //小装甲板宽    ok

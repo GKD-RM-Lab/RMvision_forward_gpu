@@ -33,7 +33,7 @@
 #define CLS_NUM 14
 /*TODO*/
 // #define MODEL_PATH_D "../models/rmyolo-v7-best/distilbert.xml","../models/rmyolo-v7-best/distilbert.bin"
-#define MODEL_PATH_D "../models/RMyolo-v7-new/RMyolov7-new.xml","../models/RMyolo-v7-new/RMyolov7-new.bin"
+// #define MODEL_PATH_D "../models/RMyolo-v7-new/RMyolov7-new.xml","../models/RMyolo-v7-new/RMyolov7-new.bin"
 // #define MODEL_PATH_D "../models/RMyolov7-best-fp32/rmyolo-v7-best.xml","../models/RMyolov7-best-fp32/rmyolo-v7-best.bin"
 // #define MODEL_PATH_D "../models/RMyolo-v7-new-fp32/RMyolov7-new.xml","../models/RMyolo-v7-new-fp32/RMyolov7-new.bin"
 
