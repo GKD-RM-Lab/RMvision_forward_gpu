@@ -14,10 +14,10 @@
 typedef struct
 {
     /*推理参数*/
-    std::string model_path_xml;
-    std::string model_path_bin;
-    float conf_threshold;
-    int rect_cut = 1;
+    std::string model_path_xml; //ok
+    std::string model_path_bin; //ok
+    float conf_threshold;   //ok
+    int rect_cut = 1;       //ok
     /*标定参数*/
     int boardSize_h;        //ok
     int boardSize_w;        //ok

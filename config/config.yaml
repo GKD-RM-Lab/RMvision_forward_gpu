@@ -8,7 +8,7 @@ boardSize_h: 9
 boardSize_w: 7
 squareSize: 0.15
 img_count: 60
-sample_period: 3
+sample_period: 20
 calib_yaml_path: "../config/camera_paramets.yaml"
 cam_gain: 17
 cam_exptime: 12000

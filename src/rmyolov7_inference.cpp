@@ -1,9 +1,15 @@
 #include "rmyolov7_inference.h"
 #include "timer.hpp"    //debug
 
+#include "parameter_loader.hpp"
+
+float CONF_THRESHOLD = CONF_THRESHOLD_D;
+
 yolo_kpt::yolo_kpt() {
-    model = core.read_model(MODEL_PATH);
-    std::shared_ptr<ov::Model> model = core.read_model(MODEL_PATH);
+    CONF_THRESHOLD = params.conf_threshold;
+
+    model = core.read_model(params.model_path_xml, params.model_path_bin);
+    std::shared_ptr<ov::Model> model = core.read_model(params.model_path_xml, params.model_path_bin);
     compiled_model = core.compile_model(model, DEVICE);
     // std::map<std::string, std::string> config = {
     //         {InferenceEngine::PluginConfigParams::KEY_PERF_COUNT, InferenceEngine::PluginConfigParams::YES}};

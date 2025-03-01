@@ -7,6 +7,7 @@
 
 #include "nlohmann/json.hpp"
 #include <fstream>
+#include <iostream>
 
 #include <thread>
 
@@ -30,6 +31,7 @@ long int get_sysetm_time_ms();
 cv::Mat rect_cut(cv::Mat image);
 
 
+
 /*************** calibration settings ****************/
 cv::Size boardSize(params.boardSize_h, params.boardSize_w); // 棋盘格的尺寸
 float squareSize = params.squareSize; // 每格的大小，单位mm
@@ -48,7 +50,9 @@ int visulization_task()
         if(frame.empty()) continue;
         if(cv::waitKey(1) == 'q') break;
         
-        frame = rect_cut(frame);
+        if(params.rect_cut == 1){
+            frame = rect_cut(frame);
+        }
 
         if(get_sysetm_time_ms() - camera.plate_lasttime < 10)
         {
@@ -78,6 +82,10 @@ int visulization_task()
 
 int calibration_main()
 {
+
+    boardSize = cv::Size(params.boardSize_h, params.boardSize_w);
+    squareSize = params.squareSize;
+
     IMG_COUNT = params.img_count;
     SAMPLE_PERIOD = params.sample_period;
 
@@ -104,7 +112,9 @@ int calibration_main()
         HIKframemtx.unlock();
         if(camera.frame.empty()) continue;
         
-        camera.frame = rect_cut(camera.frame);
+        if(params.rect_cut == 1){
+            camera.frame = rect_cut(camera.frame);
+        }
 
         //检测棋盘格角点
         cv::cvtColor(camera.frame, camera.frame_gray, cv::COLOR_BGR2GRAY);

@@ -86,7 +86,9 @@ int main(int argc, char** argv) {
         HIKframemtx.unlock();
         if(inputImage.empty()) continue;
 
-        inputImage = rect_cut(inputImage);
+        if(params.rect_cut == 1){
+            inputImage = rect_cut(inputImage);
+        }
 
         /*识别*/
         //识别图像（前处理+推理+后处理）
