@@ -23,9 +23,16 @@
 #include <thread>
 
 
+//loader
+#include "parameter_loader.hpp"
+
 void gpu_accel_check();
 
 int main(int argc, char** argv) {
+
+    //载入参数
+    para_load("../config/config.yaml");
+    // return 0;   //debug
 
     /*相机读取线程*/
     std::thread cameraThread(HIKcamtask);
@@ -51,8 +58,6 @@ int main(int argc, char** argv) {
         }
     }
 
-
-    
     //启用opencl
     cv::ocl::setUseOpenCL(true);
     gpu_accel_check();

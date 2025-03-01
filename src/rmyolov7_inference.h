@@ -20,7 +20,7 @@
 // using namespace InferenceEngine;
 
 #define NMS_THRESHOLD 0.10f //NMS参数
-#define CONF_THRESHOLD 0.35f //置信度参数
+#define CONF_THRESHOLD 0.35f //置信度参数       TODO
 #define CONF_REMAIN 0.0 //保留一帧保留的权重比例，如果不保留填写为0
 #define IMG_SIZE  640  //推理图像大小，如果不是640 和 416 需要自己在下面添加anchor
 #define ANCHOR 3 //anchor 数量
@@ -31,9 +31,10 @@
 #if DETECT_MODE == 0 // 装甲板四点模型
 #define KPT_NUM 4
 #define CLS_NUM 14
+/*TODO*/
 // #define MODEL_PATH "../models/rmyolo-v7-best/distilbert.xml","../models/rmyolo-v7-best/distilbert.bin"
-// #define MODEL_PATH "../models/RMyolo-v7-new/RMyolov7-new.xml","../models/RMyolo-v7-new/RMyolov7-new.bin"
-#define MODEL_PATH "../models/RMyolov7-best-fp32/rmyolo-v7-best.xml","../models/RMyolov7-best-fp32/rmyolo-v7-best.bin"
+#define MODEL_PATH "../models/RMyolo-v7-new/RMyolov7-new.xml","../models/RMyolo-v7-new/RMyolov7-new.bin"
+// #define MODEL_PATH "../models/RMyolov7-best-fp32/rmyolo-v7-best.xml","../models/RMyolov7-best-fp32/rmyolo-v7-best.bin"
 // #define MODEL_PATH "../models/RMyolo-v7-new-fp32/RMyolov7-new.xml","../models/RMyolo-v7-new-fp32/RMyolov7-new.bin"
 
 #elif DETECT_MODE == 1 // 能量机关五点模型
@@ -80,7 +81,7 @@ public:
     cv::Mat visual_label(cv::Mat inputImage, std::vector<yolo_kpt::Object> result);
     void removePointsOutOfRect(std::vector<cv::Point2f>& kpt, const cv::Rect2f& rect);
     int findMissingCorner(const std::vector<cv::Point2f>& pts);
-    int pnp_kpt_preprocess(std::vector<yolo_kpt::Object> result);
+    int pnp_kpt_preprocess(std::vector<yolo_kpt::Object>& result);
 
 private:
     ov::Core core;

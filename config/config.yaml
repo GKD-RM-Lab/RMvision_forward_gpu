@@ -1,0 +1,21 @@
+%YAML:1.0
+---
+model_path_xml: "../models/RMyolo-v7-new/RMyolov7-new.xml"
+model_path_bin: "../models/RMyolo-v7-new/RMyolov7-new.bin"
+conf_threshold: 0.35
+rect_cut: 1
+boardSize_h: 9
+boardSize_w: 7
+squareSize: 0.15
+img_count: 60
+sample_period: 3
+calib_yaml_path: "../config/camera_paramets.yaml"
+cam_gain: 17
+cam_exptime: 12000
+framerate: 60
+imshow_en: 1
+debug_info: 1
+armor_small_h: 50
+armor_small_w: 135
+armor_large_h: 50
+armor_large_w: 200

@@ -330,7 +330,7 @@ std::vector<yolo_kpt::Object> yolo_kpt::work(cv::Mat src_img) {
 
 /*----新增函数----*/
 
-int yolo_kpt::pnp_kpt_preprocess(std::vector<yolo_kpt::Object> result)
+int yolo_kpt::pnp_kpt_preprocess(std::vector<yolo_kpt::Object>& result)
 {
     for(size_t j=0; j<result.size(); j++)
     {

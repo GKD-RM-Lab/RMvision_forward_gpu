@@ -10,6 +10,14 @@
 
 #include <thread>
 
+#include "parameter_loader.hpp"
+
+// #define IMG_COUNT 60
+// #define SAMPLE_PERIOD 40
+
+int IMG_COUNT = 60;
+int SAMPLE_PERIOD = 40;
+
 /*相机标定参数*/
 camera_cali_type camera;
 
@@ -23,8 +31,8 @@ cv::Mat rect_cut(cv::Mat image);
 
 
 /*************** calibration settings ****************/
-cv::Size boardSize(9, 7); // 棋盘格的尺寸
-float squareSize = 15.0f; // 每格的大小，单位mm
+cv::Size boardSize(params.boardSize_h, params.boardSize_w); // 棋盘格的尺寸
+float squareSize = params.squareSize; // 每格的大小，单位mm
 
 /*可视化线程*/
 int visulization_task()
@@ -70,6 +78,8 @@ int visulization_task()
 
 int calibration_main()
 {
+    IMG_COUNT = params.img_count;
+    SAMPLE_PERIOD = params.sample_period;
 
     cv::Mat mtx, dist;
     std::vector<cv::Mat> rvecs, tvecs;
@@ -133,7 +143,7 @@ int calibration_main()
                         mtx, dist, rvecs, tvecs);
 
     // 输出相机参数
-    writeCameraParametersToJson(mtx, dist, "../config/camera_paramets.yaml");
+    writeCameraParametersToJson(mtx, dist, params.calib_yaml_path);
     std::cout << "Camera Matrix:\n" << mtx << std::endl;
     std::cout << "Distortion Coefficients:\n" << dist << std::endl;
 
@@ -184,4 +194,59 @@ cv::Mat rect_cut(cv::Mat image)
     // 进行裁剪
     cv::Mat croppedImage = image(roi).clone(); 
     return croppedImage;
+}
+
+
+
+
+void camrea_calibtation::init(){
+    /*************** cam settings ****************/
+    camrea.cam.open(camrea.cam_id, cv::CAP_V4L2);
+    camrea.cam.set(cv::CAP_PROP_FRAME_WIDTH, 1280);
+    camrea.cam.set(cv::CAP_PROP_FRAME_HEIGHT, 720);
+    camrea.cam.set(cv::CAP_PROP_FPS, 60);
+    camrea.cam.set(cv::CAP_PROP_TEMPERATURE, 5000);
+    // std::cout << cam.get(cv::CAP_PROP_EXPOSURE) << std::endl;
+    camrea.cam.set(cv::CAP_PROP_EXPOSURE, 100);
+    camrea.cam.read(camrea.frame);
+    boardSize.height = 9;
+    boardSize.width = 7;
+
+    // 创建棋盘格的3D点
+    std::vector<cv::Point3f> objP;
+    for (int i = 0; i < boardSize.height; ++i) {
+        for (int j = 0; j < boardSize.width; ++j) {
+            objP.push_back(cv::Point3f(j * squareSize, i * squareSize, 0));
+        }
+    }
+}
+
+int camrea_calibtation::image_add(cv::Mat frame){
+
+   //get calibration corners
+    cv::cvtColor(camrea.frame, camrea.frame_gray, cv::COLOR_BGR2GRAY);
+
+    if(!cv::findChessboardCorners(camrea.frame_gray, boardSize, corners)){
+        return -1;
+    }
+    //draw corners
+    cv::drawChessboardCorners(camrea.frame, boardSize, corners, true);
+
+    /*Get sample images for calibration*/
+    camrea.sample_period_count ++;
+    if(camrea.sample_period_count >= SAMPLE_PERIOD){
+        cv::cornerSubPix(camrea.frame_gray, corners, cv::Size(11, 11), cv::Size(-1, -1),
+            cv::TermCriteria(cv::TermCriteria::EPS + cv::TermCriteria::COUNT, 30, 0.1));
+        imagePoints.push_back(corners);
+        objectPoints.push_back(objP);
+
+        //get calibration imgs
+        camrea.sample_period_count = 0;
+        camrea.frame_calib.push_back(camrea.frame);
+        printf("get image, idx = %ld / %d\n", camrea.frame_calib.size(), IMG_COUNT);
+        if(camrea.frame_calib.size() >= (IMG_COUNT-1)){
+            return 0;
+        }
+    }
+
 }

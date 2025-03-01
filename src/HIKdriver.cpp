@@ -1,5 +1,7 @@
 #include "HIKdriver.hpp"
 
+#include "parameter_loader.hpp" //bug here
+
 cv::Mat HIKimage;
 std::mutex HIKframemtx;
 
@@ -167,9 +169,9 @@ int HIKcamtask()
         }
 
         //设置相机gain（类似ISO）
-        MV_CC_SetGain(handle, 17);
-        MV_CC_SetExposureTime(handle, 16000);
-        MV_CC_SetFrameRate(handle, 60.0);
+        MV_CC_SetGain(handle, params.cam_gain);
+        MV_CC_SetExposureTime(handle, params.cam_exptime);
+        MV_CC_SetFrameRate(handle, params.framerate);
         while(1){
     
             nRet = MV_CC_GetOneFrameTimeout(handle, pData, nDataSize, &stImageInfo, 1000);
@@ -208,7 +210,7 @@ int HIKcamtask()
                 HIKframemtx.unlock();
 
                 /*DEBUG选项*/
-                if(False)
+                if(false)
                 {
                     cv::imshow("frame", frame);
                     MVCC_FLOATVALUE val;
