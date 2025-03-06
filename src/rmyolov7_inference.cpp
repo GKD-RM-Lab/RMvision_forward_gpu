@@ -257,7 +257,7 @@ std::vector<yolo_kpt::Object> yolo_kpt::work(cv::Mat src_img) {
         }
     }
     timer.end();
-    std::cout << "preprocess time:" << timer.read() << std::endl;
+    // std::cout << "preprocess time:" << timer.read() << std::endl;
 
     /*---------------------推理----------------------*/
     timer.begin();
@@ -272,7 +272,7 @@ std::vector<yolo_kpt::Object> yolo_kpt::work(cv::Mat src_img) {
     auto output_tensor_p32 = infer_request.get_output_tensor(2);
     const float *result_p32 = output_tensor_p32.data<const float>();
     timer.end();
-    std::cout << "inference time:" << timer.read() << std::endl;
+    // std::cout << "inference time:" << timer.read() << std::endl;
 
     /*------------------------后处理----------------------*/
     timer.begin();
@@ -324,7 +324,7 @@ std::vector<yolo_kpt::Object> yolo_kpt::work(cv::Mat src_img) {
 #endif
     }
     timer.end();
-    std::cout << "postprocess time:" << timer.read() << std::endl;
+    // std::cout << "postprocess time:" << timer.read() << std::endl;
 #ifdef VIDEO
     // cv::imshow("Inference frame", src_img);
     // cv::waitKey(1);
@@ -446,7 +446,7 @@ cv::Mat yolo_kpt::visual_label(cv::Mat inputImage, std::vector<yolo_kpt::Object>
                 if(result[j].pnp_is_calculated == 1)
                 {
                     char text[50];
-                    std::cout << result[j].pnp_tvec << std::endl;
+                    // std::cout << result[j].pnp_tvec << std::endl;
                     std::sprintf(text, "x%.2fy%.2fz%.2f", result[j].pnp_tvec.at<double>(0)
                     , result[j].pnp_tvec.at<double>(1), result[j].pnp_tvec.at<double>(2));
                     cv::putText(inputImage, text, cv::Point(result[j].kpt[3].x + 10, result[j].kpt[3].y + 30)
@@ -467,7 +467,7 @@ cv::Mat yolo_kpt::visual_label(cv::Mat inputImage, std::vector<yolo_kpt::Object>
                 if(result[j].pnp_is_calculated == 1)
                 {
                     char text[50];
-                    std::cout << result[j].pnp_tvec << std::endl;
+                    // std::cout << result[j].pnp_tvec << std::endl;
                     std::sprintf(text, "x%.2fy%.2fz%.2f", result[j].pnp_tvec.at<double>(0)
                     , result[j].pnp_tvec.at<double>(1), result[j].pnp_tvec.at<double>(2));
                     cv::putText(inputImage, text, cv::Point(result[j].kpt[2].x + 10, result[j].kpt[2].y + 30)

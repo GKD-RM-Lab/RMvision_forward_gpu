@@ -4,7 +4,7 @@
 #include <opencv2/dnn.hpp>
 #include <iostream>
 
-
+#include <Eigen/Dense>
 
 #include "rmyolov7_inference.h"
 #include "HIKdriver.hpp"
@@ -26,7 +26,37 @@
 //loader
 #include "parameter_loader.hpp"
 
+//EKF state predict
+#include "antitopV3.h"
+
 void gpu_accel_check();
+
+double getFlyDelay(
+    double& yaw,
+    double& pitch, 
+    const double speed,
+    const double target_x,
+    const double target_y,
+    const double target_z
+) {
+    yaw = atan2(target_y, target_x);
+    double g = 9.8;
+    double h = target_z;
+    double d = sqrt(target_x * target_x + target_y * target_y);
+    double t = sqrt(d * d + h * h) / speed;
+
+    for(int i = 0; i < 5; i++) {
+        
+        pitch = asin((h + 0.5 * g * t * t) / (speed * t));
+        
+        if (std::isnan(pitch)) {
+            pitch = 0.0;
+        }
+
+        t = d / (speed * cos(pitch));
+    }
+    return t;
+}
 
 int main(int argc, char** argv) {
 
@@ -66,6 +96,8 @@ int main(int argc, char** argv) {
     yolo_kpt model;
     std::vector<yolo_kpt::Object> result;
 
+    rm::AntitopV3 antitop;
+
     /*计时器*/
     Timer timer, timer2;
     timer2.begin();
@@ -95,8 +127,8 @@ int main(int argc, char** argv) {
         timer.begin();
         result = model.work(inputImage);
         timer.end();
-        std::cout << "total time:" << timer.read() << std::endl;
-        std::cout << "--------------------" << std::endl;
+        // std::cout << "total time:" << timer.read() << std::endl;
+        // std::cout << "--------------------" << std::endl;
         
         /*PNP*/
         //角点预处理
@@ -105,7 +137,40 @@ int main(int argc, char** argv) {
         //pnp求解
         pnp.calculate_all(result);
 
-        //fps
+
+        // antitop update
+        for(auto&obj : result){
+            // armor归类 obj.label
+            Eigen::Vector4d obs_pose(obj.pnp_tvec.at<double>(2) / 1000, obj.pnp_tvec.at<double>(0) / 1000, -obj.pnp_tvec.at<double>(1) / 1000, obj.pnp_rvec.at<double>(2));
+            std::cout << obs_pose << std::endl;
+            antitop.push(obs_pose, std::chrono::system_clock::now());
+
+            // shoot control
+            const double shoot_speed = 28;
+            const double rotate_delay = 0.1;
+            const double shoot_delay = 0.1;
+    
+            Eigen::Matrix<double, 4, 1> pose;
+            bool fire;
+            double fly_delay = 0;
+            double target_yaw, target_pitch;
+    
+            pose = antitop.getCenter(fly_delay + rotate_delay);
+            for(int i = 0; i < 5; i++) {
+                fly_delay = getFlyDelay(target_yaw, target_pitch, shoot_speed, pose(0, 0), pose(1, 0), pose(2, 0));
+                fire = antitop.getFireCenter(pose = antitop.getCenter(fly_delay + rotate_delay));
+            }
+            // pose => 预测的姿态 target_yaw => 对应的yaw角 target_pitch => 对应的pitch角
+            // 控制 target_yaw target_pitch
+
+            std::cout << target_yaw << " " << target_pitch << std::endl;
+
+
+            break;
+        }
+        
+
+        // fps
         char text[50];
         std::sprintf(text, "%.2fps, %.2fms", 1000/total_time, total_time);
         cv::putText(inputImage, text, cv::Point(0,30)
@@ -113,13 +178,13 @@ int main(int argc, char** argv) {
         
         //输出识别信息&绘图
         inputImage = model.visual_label(inputImage, result);
-        if(params.imshow_en == 1){
+        if(1){
             cv::imshow("label", inputImage);
         }    
         if(cv::waitKey(1) == 'q') break;
 
         timer2.end();
-        std::cout << "display->" << 1000/timer2.read() << "fps" << std::endl;
+        // std::cout << "display->" << 1000/timer2.read() << "fps" << std::endl;
         total_time = (float)timer2.read();
         timer2.begin();
     }
