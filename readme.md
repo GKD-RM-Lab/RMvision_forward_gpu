@@ -156,4 +156,9 @@ echo "deb https://apt.repos.intel.com/openvino/2024 ubuntu22 main" | sudo tee /e
 sudo apt update
 sudo apt install openvino-2024.6.0
 
+#EKF
+sudo apt install libeigen3-dev 
+#按照这个说明修改libeigen3路径：https://blog.csdn.net/chengde6896383/article/details/88339643
+#按照http://ceres-solver.org/installation.html安装ceres
+
 ```

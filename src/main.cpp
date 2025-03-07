@@ -141,7 +141,8 @@ int main(int argc, char** argv) {
         // antitop update
         for(auto&obj : result){
             // armor归类 obj.label
-            Eigen::Vector4d obs_pose(obj.pnp_tvec.at<double>(2) / 1000, obj.pnp_tvec.at<double>(0) / 1000, -obj.pnp_tvec.at<double>(1) / 1000, obj.pnp_rvec.at<double>(2));
+            //x,  y,  z,  theta
+            Eigen::Vector4d obs_pose(obj.pnp_tvec.at<double>(2) / 1000, obj.pnp_tvec.at<double>(0) / 1000, -obj.pnp_tvec.at<double>(1) / 1000, obj.pnp_rvec.at<double>(2)); 
             std::cout << obs_pose << std::endl;
             antitop.push(obs_pose, std::chrono::system_clock::now());
 

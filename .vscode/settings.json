@@ -78,6 +78,7 @@
         "filesystem": "cpp",
         "ranges": "cpp",
         "valarray": "cpp",
-        "cfloat": "cpp"
+        "cfloat": "cpp",
+        "dense": "cpp"
     }
 }
