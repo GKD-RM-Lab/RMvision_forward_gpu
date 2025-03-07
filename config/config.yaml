@@ -7,8 +7,8 @@ model_path_xml: "../models/RMyolov7-best-fp32/rmyolo-v7-best.xml"
 model_path_bin: "../models/RMyolov7-best-fp32/rmyolo-v7-best.bin"
 
 
-conf_threshold: 0.35
-rect_cut: 0
+conf_threshold: 0.55
+rect_cut: 1
 boardSize_h: 7
 boardSize_w: 9
 squareSize: 1.5

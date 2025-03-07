@@ -142,26 +142,33 @@ int main(int argc, char** argv) {
         for(auto&obj : result){
             // armor归类 obj.label
             //x,  y,  z,  theta
-            Eigen::Vector4d obs_pose(obj.pnp_tvec.at<double>(2) / 1000, obj.pnp_tvec.at<double>(0) / 1000, -obj.pnp_tvec.at<double>(1) / 1000, obj.pnp_rvec.at<double>(2)); 
+            if(obj.pnp_tvec.rows < 3){
+                std::cout << "empty rows of pnp_tvec" << std::endl;
+                // std::cout << obj.pnp_tvec.rows << std::endl;
+                continue;
+            }
+            Eigen::Vector4d obs_pose(obj.pnp_tvec.at<double>(2) / 1000., obj.pnp_tvec.at<double>(0) / 1000., -obj.pnp_tvec.at<double>(1) / 1000., obj.pnp_rvec.at<double>(2)); 
+            // Eigen::Vector4d obs_pose(obj.pnp_tvec.at<double>(0), obj.pnp_tvec.at<double>(1), obj.pnp_tvec.at<double>(2), obj.pnp_rvec.at<double>(2)); 
             std::cout << obs_pose << std::endl;
             antitop.push(obs_pose, std::chrono::system_clock::now());
-
+            std::cout << "------------------------" << std::endl;
+            break;
             // shoot control
             const double shoot_speed = 28;
             const double rotate_delay = 0.1;
             const double shoot_delay = 0.1;
     
-            Eigen::Matrix<double, 4, 1> pose;
+            Eigen::Matrix<double, 4, 1> predict_pose;
             bool fire;
             double fly_delay = 0;
             double target_yaw, target_pitch;
     
-            pose = antitop.getCenter(fly_delay + rotate_delay);
-            for(int i = 0; i < 5; i++) {
-                fly_delay = getFlyDelay(target_yaw, target_pitch, shoot_speed, pose(0, 0), pose(1, 0), pose(2, 0));
-                fire = antitop.getFireCenter(pose = antitop.getCenter(fly_delay + rotate_delay));
+            predict_pose = antitop.getCenter(fly_delay + rotate_delay);
+            for(int i = 0; i < 1000; i++) {
+                fly_delay = getFlyDelay(target_yaw, target_pitch, shoot_speed, predict_pose(0, 0), predict_pose(1, 0), predict_pose(2, 0));
+                fire = antitop.getFireCenter(predict_pose = antitop.getCenter(fly_delay + rotate_delay));
             }
-            // pose => 预测的姿态 target_yaw => 对应的yaw角 target_pitch => 对应的pitch角
+            // predict_pose => 预测的姿态 target_yaw => 对应的yaw角 target_pitch => 对应的pitch角
             // 控制 target_yaw target_pitch
 
             std::cout << target_yaw << " " << target_pitch << std::endl;
