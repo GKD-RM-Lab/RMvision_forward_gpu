@@ -29,6 +29,8 @@
 //EKF state predict
 #include "antitopV3.h"
 
+#include "send_control.hpp"
+
 void gpu_accel_check();
 
 double getFlyDelay(
@@ -60,6 +62,7 @@ double getFlyDelay(
 
 int main(int argc, char** argv) {
 
+    init_send("192.168.1.211");
     //载入参数
     para_load("../config/config.yaml");
     // return 0;   //debug
@@ -149,10 +152,10 @@ int main(int argc, char** argv) {
             }
             Eigen::Vector4d obs_pose(obj.pnp_tvec.at<double>(2) / 1000., obj.pnp_tvec.at<double>(0) / 1000., -obj.pnp_tvec.at<double>(1) / 1000., obj.pnp_rvec.at<double>(2)); 
             // Eigen::Vector4d obs_pose(obj.pnp_tvec.at<double>(0), obj.pnp_tvec.at<double>(1), obj.pnp_tvec.at<double>(2), obj.pnp_rvec.at<double>(2)); 
-            std::cout << obs_pose << std::endl;
+            // std::cout << obs_pose << std::endl;
             antitop.push(obs_pose, std::chrono::system_clock::now());
             std::cout << "------------------------" << std::endl;
-            break;
+            // break;
             // shoot control
             const double shoot_speed = 28;
             const double rotate_delay = 0.1;
@@ -172,10 +175,13 @@ int main(int argc, char** argv) {
             // 控制 target_yaw target_pitch
 
             std::cout << target_yaw << " " << target_pitch << std::endl;
+            send_control(target_yaw / 15,target_pitch);
 
 
             break;
         }
+
+        continue;
         
 
         // fps
@@ -186,10 +192,12 @@ int main(int argc, char** argv) {
         
         //输出识别信息&绘图
         inputImage = model.visual_label(inputImage, result);
-        if(1){
-            cv::imshow("label", inputImage);
-        }    
-        if(cv::waitKey(1) == 'q') break;
+        // if(1){
+        //     cv::imshow("label", inputImage);
+        // }    
+        // if(cv::waitKey(1) == 'q') break;
+        cv::imwrite("../a.jpg",inputImage);
+        std::this_thread::sleep_for(std::chrono::milliseconds(30));
 
         timer2.end();
         // std::cout << "display->" << 1000/timer2.read() << "fps" << std::endl;

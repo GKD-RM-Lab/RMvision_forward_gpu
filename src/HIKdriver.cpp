@@ -209,6 +209,7 @@ int HIKcamtask()
                 cv::cvtColor(frame, image, cv::COLOR_RGB2BGR); 
 
                 HIKframemtx.lock();
+                cv::flip(image,image,-1);
                 image.copyTo(HIKimage);
                 HIKframemtx.unlock();
 

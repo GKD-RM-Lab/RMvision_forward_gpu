@@ -74,6 +74,9 @@ int visulization_task()
         }
 
         cv::imshow("cam", frame);
+        // cv::imwrite("../cam.jpg",frame);
+        // std::this_thread::sleep_for(std::chrono::milliseconds(30));
+
 
     }
     cv::destroyAllWindows();
