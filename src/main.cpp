@@ -4,15 +4,10 @@
 #include <opencv2/dnn.hpp>
 #include <iostream>
 
-#include <Eigen/Dense>
-
 #include "rmyolov7_inference.h"
 #include "HIKdriver.hpp"
 
 #include "timer.hpp"
-
-//cam calib
-#include "cam_calibration.hpp"
 
 //pnpsolver
 #include "PNPsolver.hpp"
@@ -25,10 +20,7 @@
 
 //loader
 #include "parameter_loader.hpp"
-
-//EKF state predict
-#include "antitopV3.h"
-
+#include "cam_calibration.hpp"
 #include "send_control.hpp"
 
 void gpu_accel_check();
@@ -73,24 +65,6 @@ int main(int argc, char** argv) {
 
     float total_time;   //debug 每识别周期时间
 
-    /*相机标定*/
-    if(argc > 1)
-    {
-        std::string command_str;
-        command_str = argv[1];    
-        std::cout << command_str << std::endl;
-        if(command_str == "--calibration")
-        {
-            //相机标定
-            std::cout << "into camera calibration ....." << std::endl;
-            calibration_main();
-            return 0;
-        }else{
-            std::cout << "usage: " << std::endl;
-            std::cout << "--calibration -> to calibrate camera" << std::endl;
-        }
-    }
-
     //启用opencl
     cv::ocl::setUseOpenCL(true);
     gpu_accel_check();
@@ -98,8 +72,6 @@ int main(int argc, char** argv) {
     /*推理模型*/
     yolo_kpt model;
     std::vector<yolo_kpt::Object> result;
-
-    rm::AntitopV3 antitop;
 
     /*计时器*/
     Timer timer, timer2;
@@ -134,76 +106,34 @@ int main(int argc, char** argv) {
         // std::cout << "--------------------" << std::endl;
         
         /*PNP*/
-        //角点预处理
         model.pnp_kpt_preprocess(result);
-
-        //pnp求解
         pnp.calculate_all(result);
 
-
-        // antitop update
-        for(auto&obj : result){
-            // armor归类 obj.label
-            //x,  y,  z,  theta
-            if(obj.pnp_tvec.rows < 3){
-                std::cout << "empty rows of pnp_tvec" << std::endl;
-                // std::cout << obj.pnp_tvec.rows << std::endl;
-                continue;
-            }
-            Eigen::Vector4d obs_pose(obj.pnp_tvec.at<double>(2) / 1000., obj.pnp_tvec.at<double>(0) / 1000., -obj.pnp_tvec.at<double>(1) / 1000., obj.pnp_rvec.at<double>(2)); 
-            // Eigen::Vector4d obs_pose(obj.pnp_tvec.at<double>(0), obj.pnp_tvec.at<double>(1), obj.pnp_tvec.at<double>(2), obj.pnp_rvec.at<double>(2)); 
-            // std::cout << obs_pose << std::endl;
-            antitop.push(obs_pose, std::chrono::system_clock::now());
-            std::cout << "------------------------" << std::endl;
-            // break;
-            // shoot control
-            const double shoot_speed = 28;
-            const double rotate_delay = 0.1;
-            const double shoot_delay = 0.1;
-    
-            Eigen::Matrix<double, 4, 1> predict_pose;
-            bool fire;
-            double fly_delay = 0;
-            double target_yaw, target_pitch;
-    
-            predict_pose = antitop.getCenter(fly_delay + rotate_delay);
-            for(int i = 0; i < 1000; i++) {
-                fly_delay = getFlyDelay(target_yaw, target_pitch, shoot_speed, predict_pose(0, 0), predict_pose(1, 0), predict_pose(2, 0));
-                fire = antitop.getFireCenter(predict_pose = antitop.getCenter(fly_delay + rotate_delay));
-            }
-            // predict_pose => 预测的姿态 target_yaw => 对应的yaw角 target_pitch => 对应的pitch角
-            // 控制 target_yaw target_pitch
-
-            std::cout << target_yaw << " " << target_pitch << std::endl;
-            send_control(target_yaw / 15,target_pitch);
-
-
-            break;
-        }
-
-        continue;
-        
-
-        // fps
-        char text[50];
-        std::sprintf(text, "%.2fps, %.2fms", 1000/total_time, total_time);
-        cv::putText(inputImage, text, cv::Point(0,30)
-            , cv::FONT_HERSHEY_SIMPLEX, 1.2, cv::Scalar(0,255,0), 3);
-        
-        //输出识别信息&绘图
+        // ✅ 输出识别信息 & 绘图
         inputImage = model.visual_label(inputImage, result);
-        // if(1){
-        //     cv::imshow("label", inputImage);
-        // }    
-        // if(cv::waitKey(1) == 'q') break;
-        cv::imwrite("../a.jpg",inputImage);
+
+        // ✅ 显示 FPS
+        char text[50];
+        std::sprintf(text, "%.2f FPS", 1000.0 / total_time);
+        cv::putText(inputImage, text, cv::Point(10, 40),
+                    cv::FONT_HERSHEY_SIMPLEX, 1.0, cv::Scalar(0,255,0), 2);
+
+        // ✅ 实时显示窗口
+        cv::imshow("YOLOv7-Detection", inputImage);
+
+        // ✅ 每 1ms 检查键盘输入，按下 q 或 Esc 退出
+        if (cv::waitKey(1) == 'q' || cv::waitKey(1) == 27) break;
+
+        // ✅ 可选：保存最后一帧结果
+        cv::imwrite("../last_frame.jpg", inputImage);
+
         std::this_thread::sleep_for(std::chrono::milliseconds(30));
 
         timer2.end();
-        // std::cout << "display->" << 1000/timer2.read() << "fps" << std::endl;
         total_time = (float)timer2.read();
         timer2.begin();
     }
+
     return 0;
 }
 
