@@ -21,7 +21,6 @@
 //loader
 #include "parameter_loader.hpp"
 
-#include "send_control.hpp"
 
 void gpu_accel_check();
 
