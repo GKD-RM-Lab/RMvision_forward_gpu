@@ -17,10 +17,10 @@
 
 #include <thread>
 
-
+#include "cam_calibration.hpp"
 //loader
 #include "parameter_loader.hpp"
-
+#include "send_control.hpp"
 
 void gpu_accel_check();
 
@@ -71,8 +71,6 @@ int main(int argc, char** argv) {
     /*推理模型*/
     yolo_kpt model;
     std::vector<yolo_kpt::Object> result;
-
-    rm::AntitopV3 antitop;
 
     /*计时器*/
     Timer timer, timer2;

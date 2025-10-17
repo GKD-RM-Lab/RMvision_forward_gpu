@@ -3,8 +3,8 @@
 # model_path_xml: "../models/RMyolo-v7-new/RMyolov7-new.xml"
 # model_path_bin: "../models/RMyolo-v7-new/RMyolov7-new.bin"
 
-model_path_xml: "../models/yolov7_quantized/rmyolov7-int8.xml"
-model_path_bin: "../models/yolov7_quantized/rmyolov7-int8.bin"
+model_path_xml: "../models/RMyolov7-best-fp32/rmyolo-v7-best.xml"
+model_path_bin: "../models/RMyolov7-best-fp32/rmyolo-v7-best.bin"
 
 
 conf_threshold: 0.55
