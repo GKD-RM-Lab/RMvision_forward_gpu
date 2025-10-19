@@ -109,22 +109,17 @@ int main(int argc, char** argv) {
         model.pnp_kpt_preprocess(result);
         pnp.calculate_all(result);
 
-        // ✅ 输出识别信息 & 绘图
         inputImage = model.visual_label(inputImage, result);
 
-        // ✅ 显示 FPS
         char text[50];
         std::sprintf(text, "%.2f FPS", 1000.0 / total_time);
         cv::putText(inputImage, text, cv::Point(10, 40),
                     cv::FONT_HERSHEY_SIMPLEX, 1.0, cv::Scalar(0,255,0), 2);
 
-        // ✅ 实时显示窗口
         cv::imshow("YOLOv7-Detection", inputImage);
 
-        // ✅ 每 1ms 检查键盘输入，按下 q 或 Esc 退出
         if (cv::waitKey(1) == 'q' || cv::waitKey(1) == 27) break;
 
-        // ✅ 可选：保存最后一帧结果
         cv::imwrite("../last_frame.jpg", inputImage);
 
         std::this_thread::sleep_for(std::chrono::milliseconds(30));
