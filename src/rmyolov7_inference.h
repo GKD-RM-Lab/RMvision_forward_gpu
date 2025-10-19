@@ -25,7 +25,7 @@
 #define IMG_SIZE  640  //推理图像大小，如果不是640 和 416 需要自己在下面添加anchor
 #define ANCHOR 3 //anchor 数量
 #define DETECT_MODE 0 //ARMOR 0 WIN 1 BOARD 2
-#define DEVICE "GPU" // 设备选择
+#define DEVICE "CPU" // 设备选择
 // #define VIDEO //是否展示推理视频
 
 #if DETECT_MODE == 0 // 装甲板四点模型
